@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Activate License</title>
+</head>
+
+<body>
+
+    <h1>Activate Your License 🔐</h1>
+
+    <p>Enter your license key to activate your account.</p>
+
+    {% if error %}
+        <p>{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <input
+            type="text"
+            name="license_key"
+            placeholder="Enter License Key"
+            required
+        >
+
+        <br><br>
+
+        <button type="submit">
+            Activate License
+        </button>
+    </form>
+
+</body>
+</html>

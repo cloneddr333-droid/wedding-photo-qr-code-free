@@ -1,0 +1,411 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Guest Favorites - {{ wedding.event_name }}
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+
+        /* TOP BAR */
+
+        .topbar {
+            background: #111;
+            color: white;
+            padding: 16px 22px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            background: #333;
+            padding: 9px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: #444;
+        }
+
+
+        /* HEADER */
+
+        .page-header {
+            width: 92%;
+            max-width: 1100px;
+            margin: 30px auto 20px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .page-header p {
+            margin-top: 8px;
+            color: #777;
+        }
+
+
+        /* GUEST CARD */
+
+        .guest-card {
+            width: 92%;
+            max-width: 1100px;
+
+            margin: 0 auto 25px;
+
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 22px;
+
+            box-shadow:
+                0 4px 18px rgba(0, 0, 0, 0.07);
+        }
+
+
+        .guest-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 18px;
+        }
+
+        .guest-name {
+            font-size: 21px;
+            font-weight: 700;
+        }
+
+        .favorite-count {
+            background: #f1f1f1;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #555;
+        }
+
+
+        /* PHOTO GRID */
+
+        .photo-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fill,
+                    minmax(170px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .photo-card {
+            background: #fafafa;
+
+            border-radius: 12px;
+
+            overflow: hidden;
+
+            border: 1px solid #eee;
+        }
+
+
+        .photo-card img {
+            width: 100%;
+            height: 210px;
+
+            object-fit: cover;
+
+            display: block;
+        }
+
+
+        .photo-info {
+            padding: 10px;
+            text-align: center;
+        }
+
+
+        .photo-number {
+            font-size: 13px;
+            color: #777;
+        }
+
+
+        .download-btn {
+            display: inline-block;
+
+            margin-top: 8px;
+
+            padding: 8px 14px;
+
+            background: #222;
+            color: white;
+
+            text-decoration: none;
+
+            border-radius: 7px;
+
+            font-size: 13px;
+        }
+
+        .download-btn:hover {
+            background: #444;
+        }
+
+
+        /* EMPTY STATE */
+
+        .empty-box {
+            width: 92%;
+            max-width: 700px;
+
+            margin: 60px auto;
+
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 45px 25px;
+
+            text-align: center;
+
+            box-shadow:
+                0 4px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        .empty-box .icon {
+            font-size: 45px;
+        }
+
+        .empty-box h2 {
+            margin: 15px 0 8px;
+        }
+
+        .empty-box p {
+            color: #777;
+            margin: 0;
+        }
+
+
+        /* MOBILE */
+
+        @media (max-width: 600px) {
+
+            .topbar {
+                padding: 14px 15px;
+            }
+
+            .topbar h2 {
+                font-size: 17px;
+            }
+
+            .page-header {
+                margin-top: 22px;
+            }
+
+            .page-header h1 {
+                font-size: 23px;
+            }
+
+            .guest-card {
+                padding: 16px;
+            }
+
+            .guest-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .photo-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+                gap: 10px;
+            }
+
+            .photo-card img {
+                height: 170px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- TOP BAR -->
+
+    <div class="topbar">
+
+        <h2>
+            ❤️ Guest Favorites
+        </h2>
+
+        <a
+            href="{% url 'wedding_gallery' wedding.id %}"
+            class="back-btn"
+        >
+            ← Back to Gallery
+        </a>
+
+    </div>
+
+
+
+    <!-- PAGE HEADER -->
+
+    <div class="page-header">
+
+        <h1>
+            {{ wedding.event_name }}
+        </h1>
+
+        <p>
+            Photos selected as favorites by your guests.
+        </p>
+
+    </div>
+
+
+
+    {% if guests %}
+
+
+        {% for guest in guests %}
+
+            <div class="guest-card">
+
+                <div class="guest-header">
+
+                    <div class="guest-name">
+                        👤 {{ guest.name }}
+                    </div>
+
+                    <div class="favorite-count">
+
+                        ❤️
+                        {{ guest.favorites.all|length }}
+                        Favorite{{ guest.favorites.all|length|pluralize }}
+
+                    </div>
+
+                </div>
+
+
+                <div class="photo-grid">
+
+
+                    {% for favorite in guest.favorites.all %}
+
+                        <div class="photo-card">
+
+                            <img
+                                src="{{ favorite.photo.image.url }}"
+                                alt="Favorite wedding photo"
+                                loading="lazy"
+                            >
+
+
+                            <div class="photo-info">
+
+                                <div class="photo-number">
+                                    Photo #{{ favorite.photo.id }}
+                                </div>
+
+
+                                <a
+                                    href="{{ favorite.photo.image.url }}"
+                                    download="wedding-photo-{{ favorite.photo.id }}.jpg"
+                                    class="download-btn"
+                                >
+                                    ⬇ Download
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+
+
+    {% else %}
+
+
+        <div class="empty-box">
+
+            <div class="icon">
+                ❤️
+            </div>
+
+            <h2>
+                No Favorites Yet
+            </h2>
+
+            <p>
+                Guests have not selected any photos
+                as favorites yet.
+            </p>
+
+        </div>
+
+
+    {% endif %}
+
+
+
+</body>
+
+</html>

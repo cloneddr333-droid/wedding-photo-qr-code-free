@@ -1,0 +1,1950 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Find My Wedding Photos</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #faf7f5;
+            color: #333;
+        }
+
+        /* HEADER */
+
+        .header {
+            text-align: center;
+            padding: 35px 20px 25px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .header p {
+            margin-top: 12px;
+            color: #777;
+            line-height: 1.5;
+        }
+
+        /* PHOTOGRAPHER BRANDING */
+
+        .photographer-brand {
+            text-align: center;
+            margin-bottom: 18px;
+            padding-top: 20px;
+        }
+
+        .photographer-logo {
+            width: 85px;
+            height: 85px;
+            object-fit: contain;
+            border-radius: 50%;
+            margin-bottom: 8px;
+        }
+
+        .photographer-name {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .event-name {
+            text-align: center;
+            font-size: 15px;
+            color: #666;
+            margin-top: 4px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        /* NAME */
+
+        .guest-name-box {
+            width: 92%;
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+
+        #guestName {
+            width: 100%;
+            padding: 13px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        #guestName:focus {
+            border-color: #999;
+        }
+
+        /* MAIN CARD */
+
+        .card {
+            width: 92%;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            background: white;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        /* UPLOAD */
+
+        .upload-box {
+            border: 2px dashed #bbb;
+            border-radius: 15px;
+            padding: 25px 15px;
+            margin-top: 20px;
+        }
+
+        .upload-box label {
+            display: inline-block;
+            background: #222;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .upload-box label:hover {
+            background: #444;
+        }
+
+        #guestPhoto {
+            display: none;
+        }
+
+        #preview {
+            display: none;
+            width: 100%;
+            max-width: 350px;
+            max-height: 400px;
+            object-fit: contain;
+            margin: 20px auto 0;
+            border-radius: 12px;
+        }
+
+        /* STATUS */
+
+        #status {
+            margin-top: 20px;
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        /* GALLERY */
+
+        #gallery {
+            width: 94%;
+            max-width: 1100px;
+            margin: 30px auto 50px;
+
+            display: none;
+
+            grid-template-columns:
+                repeat(auto-fill, minmax(180px, 1fr));
+
+            gap: 18px;
+        }
+
+        .photo-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+            padding-bottom: 12px;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 198px;
+            object-fit: cover;
+            display: block;
+            cursor: pointer;
+        }
+
+        .photo-card img:hover {
+            opacity: 0.92;
+        }
+
+        /* DOWNLOAD */
+
+        .download-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 9px 18px;
+            background: #222;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .download-btn:hover {
+            background: #444;
+        }
+
+        /* LIGHTBOX */
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.92);
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 20px;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-image {
+            max-width: 90vw;
+            max-height: 82vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .lightbox-close,
+        .lightbox-prev,
+        .lightbox-next {
+            position: absolute;
+            border: none;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 25px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-close {
+            top: 20px;
+            right: 20px;
+        }
+
+        .lightbox-prev {
+            left: 20px;
+        }
+
+        .lightbox-next {
+            right: 20px;
+        }
+
+        .lightbox-download {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: #222;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        /* TRY AGAIN */
+
+        #tryAgain {
+            display: none;
+            margin-top: 15px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #777;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 600px) {
+
+            .header {
+                padding-top: 25px;
+            }
+
+            .header h1 {
+                font-size: 25px;
+            }
+
+            .card {
+                padding: 20px 15px;
+            }
+
+            #gallery {
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+                gap: 10px;
+            }
+
+            .photo-card img {
+                height: 162px;
+            }
+
+            .lightbox-image {
+                max-width: 94vw;
+                max-height: 75vh;
+            }
+
+            .lightbox-prev {
+                left: 8px;
+            }
+
+            .lightbox-next {
+                right: 8px;
+            }
+
+            .lightbox-close {
+                top: 12px;
+                right: 12px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- PHOTOGRAPHER BRANDING -->
+
+<div class="photographer-brand">
+
+    {% if wedding.photographer.logo %}
+
+        <img
+            src="{{ wedding.photographer.logo.url }}"
+            alt="{{ wedding.photographer.business_name }}"
+            class="photographer-logo"
+        >
+
+    {% endif %}
+
+
+    {% if wedding.photographer.business_name %}
+
+        <div class="photographer-name">
+            {{ wedding.photographer.business_name }}
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- EVENT NAME -->
+
+<div class="event-name">
+
+    💍 {{ wedding.event_name }}
+
+</div>
+
+
+<!-- HEADER -->
+
+<div class="header">
+
+    <h1>
+        💍 Find Your Wedding Photos
+    </h1>
+
+    <p>
+        Upload one photo containing your
+        <strong>face + Wedding QR code</strong>
+    </p>
+
+</div>
+
+
+<!-- GUEST NAME -->
+
+<div class="guest-name-box">
+
+    <input
+        type="text"
+        id="guestName"
+        placeholder="Enter your name"
+        maxlength="100"
+    >
+
+</div>
+
+
+<!-- UPLOAD CARD -->
+
+<div class="card">
+
+    <div class="upload-box">
+
+        <label for="guestPhoto">
+            📷 Choose Your Photo
+        </label>
+
+        <input
+            type="file"
+            id="guestPhoto"
+            accept="image/*"
+        >
+
+        <img
+            id="preview"
+            alt="Your Photo Preview"
+        >
+
+    </div>
+
+
+    <p id="status">
+        Please select your photo.
+    </p>
+
+
+    <button
+        id="tryAgain"
+        onclick="location.reload()"
+    >
+        🔄 Try Another Photo
+    </button>
+
+</div>
+
+
+<!-- MATCHING PHOTO GALLERY -->
+
+<div id="gallery"></div>
+
+
+<!-- FOOTER -->
+
+<div class="footer">
+
+    Find your memories instantly ❤️
+
+</div>
+
+
+<!-- LIGHTBOX -->
+
+<div
+    id="lightbox"
+    class="lightbox"
+>
+
+    <button
+        id="lightboxClose"
+        class="lightbox-close"
+        type="button"
+    >
+        ✕
+    </button>
+
+
+    <button
+        id="lightboxPrev"
+        class="lightbox-prev"
+        type="button"
+    >
+        ‹
+    </button>
+
+
+    <img
+        id="lightboxImage"
+        class="lightbox-image"
+        src=""
+        alt="Wedding Photo"
+    >
+
+
+    <button
+        id="lightboxNext"
+        class="lightbox-next"
+        type="button"
+    >
+        ›
+    </button>
+
+
+    <a
+        id="lightboxDownload"
+        href="#"
+        class="lightbox-download"
+        download
+    >
+        ⬇ Download
+    </a>
+
+</div>
+
+
+<!-- QR SCANNER -->
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+
+<!-- FACE RECOGNITION -->
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+
+<script>
+
+
+/* =========================================================
+   CONFIG
+========================================================= */
+
+const MODEL_URL =
+    "{% static 'models' %}";
+
+
+const PHOTOS_URL =
+    "{% url 'guest_wedding_photos' 0 %}";
+
+
+const CREATE_GUEST_URL =
+    "{% url 'create_guest' %}";
+
+
+const FAVORITE_URL =
+    "{% url 'add_favorite' %}";
+
+
+/*
+ * Maximum processing size.
+ *
+ * Phone cameras can produce images such as:
+ * 4000 x 3000
+ * 6000 x 4000
+ *
+ * Processing those full-size images wastes RAM/CPU.
+ *
+ * We resize only the COPY used for QR + face detection.
+ */
+const MAX_PROCESSING_SIZE = 1600;
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const guestPhoto =
+    document.getElementById("guestPhoto");
+
+
+const preview =
+    document.getElementById("preview");
+
+
+const status =
+    document.getElementById("status");
+
+
+const gallery =
+    document.getElementById("gallery");
+
+
+const tryAgain =
+    document.getElementById("tryAgain");
+
+
+let guestId = null;
+
+
+/*
+ * Models are NOT loaded when the page opens.
+ *
+ * This is important for reducing initial CPU/RAM usage.
+ */
+let modelsLoaded = false;
+
+let modelsLoadingPromise = null;
+
+
+/* =========================================================
+   LOAD MODELS ONLY WHEN NEEDED
+========================================================= */
+
+async function loadModels() {
+
+if (modelsLoaded) {
+    return;
+}
+
+if (modelsLoadingPromise) {
+    return modelsLoadingPromise;
+}
+
+modelsLoadingPromise = (async function () {
+
+    status.innerText =
+        "⏳ Preparing face recognition...";
+
+    await faceapi.nets.tinyFaceDetector.loadFromUri(
+        MODEL_URL + "/tiny_face_detector"
+    );
+
+    await faceapi.nets.faceLandmark68Net.loadFromUri(
+        MODEL_URL + "/face_landmark_68"
+    );
+
+    await faceapi.nets.faceRecognitionNet.loadFromUri(
+        MODEL_URL + "/face_recognition"
+    );
+
+    modelsLoaded = true;
+
+})();
+
+try {
+
+    await modelsLoadingPromise;
+
+} catch (error) {
+
+    modelsLoadingPromise = null;
+    modelsLoaded = false;
+
+    throw error;
+}
+}
+
+
+/* =========================================================
+   LOAD IMAGE FROM FILE
+========================================================= */
+
+function loadImageFromFile(file) {
+
+    return new Promise(
+        function(resolve, reject) {
+
+            const image =
+                new Image();
+
+            const objectUrl =
+                URL.createObjectURL(file);
+
+
+            image.onload =
+                function() {
+
+                    URL.revokeObjectURL(
+                        objectUrl
+                    );
+
+                    resolve(image);
+                };
+
+
+            image.onerror =
+                function() {
+
+                    URL.revokeObjectURL(
+                        objectUrl
+                    );
+
+                    reject(
+                        new Error(
+                            "Could not load image."
+                        )
+                    );
+                };
+
+
+            image.src =
+                objectUrl;
+
+        }
+    );
+}
+
+
+/* =========================================================
+   CREATE SMALL PROCESSING CANVAS
+========================================================= */
+
+function createProcessingCanvas(image) {
+
+    const originalWidth =
+        image.naturalWidth ||
+        image.width;
+
+
+    const originalHeight =
+        image.naturalHeight ||
+        image.height;
+
+
+    if (
+        !originalWidth ||
+        !originalHeight
+    ) {
+
+        throw new Error(
+            "Invalid image dimensions."
+        );
+    }
+
+
+    /*
+     * Keep aspect ratio.
+     */
+
+    const scale =
+        Math.min(
+            1,
+            MAX_PROCESSING_SIZE /
+            Math.max(
+                originalWidth,
+                originalHeight
+            )
+        );
+
+
+    const width =
+        Math.max(
+            1,
+            Math.round(
+                originalWidth * scale
+            )
+        );
+
+
+    const height =
+        Math.max(
+            1,
+            Math.round(
+                originalHeight * scale
+            )
+        );
+
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+
+    canvas.width =
+        width;
+
+
+    canvas.height =
+        height;
+
+
+    const ctx =
+        canvas.getContext(
+            "2d",
+            {
+                willReadFrequently: true
+            }
+        );
+
+
+    /*
+     * Draw resized image.
+     */
+
+    ctx.drawImage(
+        image,
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    return canvas;
+}
+
+
+/* =========================================================
+   QR READER
+========================================================= */
+
+function readQRCode(canvas) {
+
+    const ctx =
+        canvas.getContext(
+            "2d",
+            {
+                willReadFrequently: true
+            }
+        );
+
+
+    const imageData =
+        ctx.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+    const qrCode =
+        jsQR(
+            imageData.data,
+            imageData.width,
+            imageData.height,
+            {
+                inversionAttempts:
+                    "attemptBoth"
+            }
+        );
+
+
+    if (!qrCode) {
+
+        return null;
+    }
+
+
+    return qrCode.data;
+}
+
+
+/* =========================================================
+   GET WEDDING ID
+========================================================= */
+
+function getWeddingId(qrData) {
+
+    try {
+
+        const qrUrl =
+            new URL(qrData);
+
+
+        const parts =
+            qrUrl.pathname
+                .split("/")
+                .filter(Boolean);
+
+
+        /*
+         * /guest-match/<id>/
+         */
+
+        const guestMatchIndex =
+            parts.indexOf(
+                "guest-match"
+            );
+
+
+        if (
+            guestMatchIndex !== -1 &&
+            parts[guestMatchIndex + 1]
+        ) {
+
+            return parts[
+                guestMatchIndex + 1
+            ];
+        }
+
+
+        /*
+         * /wedding/<id>/
+         */
+
+        const weddingIndex =
+            parts.indexOf(
+                "wedding"
+            );
+
+
+        if (
+            weddingIndex !== -1 &&
+            parts[weddingIndex + 1]
+        ) {
+
+            return parts[
+                weddingIndex + 1
+            ];
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "QR URL error:",
+            error
+        );
+    }
+
+
+    return null;
+}
+
+
+/* =========================================================
+   SERVER SIDE MATCHING
+========================================================= */
+
+async function getWeddingPhotos(
+    weddingId,
+    descriptor
+) {
+
+    const url =
+        PHOTOS_URL.replace(
+            "/0/",
+            "/" + weddingId + "/"
+        );
+
+
+    const response =
+        await fetch(
+            url,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+
+                    "X-CSRFToken":
+                        getCookie(
+                            "csrftoken"
+                        )
+                },
+
+                body:
+                    JSON.stringify({
+                        descriptor:
+                            Array.from(
+                                descriptor
+                            )
+                    })
+            }
+        );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Wedding photos could not be matched."
+        );
+    }
+
+
+    return await response.json();
+}
+
+
+/* =========================================================
+   GUEST PHOTO
+========================================================= */
+
+guestPhoto.addEventListener(
+    "change",
+    async function() {
+
+        /*
+         * Clear previous results.
+         */
+
+        gallery.innerHTML = "";
+
+        gallery.style.display =
+            "none";
+
+
+        /*
+         * Get guest name.
+         */
+
+        const guestName =
+            document
+                .getElementById(
+                    "guestName"
+                )
+                .value
+                .trim();
+
+
+        if (!guestName) {
+
+            status.innerText =
+                "⚠️ Please enter your name first.";
+
+            guestPhoto.value = "";
+
+            return;
+        }
+
+
+        tryAgain.style.display =
+            "none";
+
+
+        if (!guestPhoto.files[0]) {
+
+            return;
+        }
+
+
+        try {
+
+            const file =
+                guestPhoto.files[0];
+
+
+            /* =================================================
+               FILE SIZE MESSAGE
+            ================================================= */
+
+            status.innerText =
+                "⏳ Preparing your photo...";
+
+
+            /*
+             * Browser preview.
+             *
+             * This uses the original file but does NOT
+             * send it to the server.
+             */
+
+            const previewUrl =
+                URL.createObjectURL(
+                    file
+                );
+
+
+            preview.src =
+                previewUrl;
+
+
+            preview.style.display =
+                "block";
+
+
+            /*
+             * Load image.
+             */
+
+            const image =
+                await loadImageFromFile(
+                    file
+                );
+
+
+            /* =================================================
+               RESIZE FOR PROCESSING
+            ================================================= */
+
+            status.innerText =
+                "⚡ Optimizing image...";
+
+
+            const processingCanvas =
+                createProcessingCanvas(
+                    image
+                );
+
+            function createFaceCanvas(image) {
+
+                const originalWidth =
+                    image.naturalWidth || image.width;
+
+                const originalHeight =
+                    image.naturalHeight || image.height;
+
+                const MAX_FACE_SIZE = 900;
+
+                const scale =
+                    Math.min(
+                        1,
+                        MAX_FACE_SIZE /
+                        Math.max(
+                            originalWidth,
+                            originalHeight
+                        )
+                    );
+
+                const width =
+                    Math.max(
+                        1,
+                        Math.round(originalWidth * scale)
+                    );
+
+                const height =
+                    Math.max(
+                        1,
+                        Math.round(originalHeight * scale)
+                    );
+
+                const canvas =
+                    document.createElement("canvas");
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx =
+                    canvas.getContext(
+                        "2d",
+                        {
+                            willReadFrequently: true
+                        }
+                    );
+
+                ctx.drawImage(
+                    image,
+                    0,
+                    0,
+                    width,
+                    height
+                );
+
+                return canvas;
+                }
+
+            /*
+             * Release original image reference as much
+             * as possible after the processing canvas
+             * has been created.
+             */
+
+            /* =================================================
+               QR
+            ================================================= */
+
+            status.innerText =
+                "🔍 Reading Wedding QR...";
+
+
+            const qrData =
+                readQRCode(
+                    processingCanvas
+                );
+
+
+            if (!qrData) {
+
+                status.innerText =
+                    "❌ Wedding QR code not found.";
+
+                tryAgain.style.display =
+                    "inline-block";
+
+                return;
+            }
+
+
+            /* =================================================
+               WEDDING ID
+            ================================================= */
+
+            const weddingId =
+                getWeddingId(
+                    qrData
+                );
+
+
+            if (!weddingId) {
+
+                status.innerText =
+                    "❌ Could not identify Wedding.";
+
+                tryAgain.style.display =
+                    "inline-block";
+
+                return;
+            }
+
+
+            /* =================================================
+               LOAD MODELS ONLY NOW
+            ================================================= */
+
+            if (!modelsLoaded) {
+
+                status.innerText =
+                    "⏳ Preparing face recognition...";
+
+                await loadModels();
+            }
+
+
+            /* =================================================
+               FACE DETECTION
+            ================================================= */
+
+            status.innerText =
+                "🔍 Detecting your face...";
+
+            const faceCanvas =
+                createFaceCanvas(image);
+            const detection =
+                await faceapi
+                    .detectSingleFace(
+                        faceCanvas,
+                        new faceapi.TinyFaceDetectorOptions({
+                            inputSize: 192,
+                            scoreThreshold: 0.5
+                        })
+                    )
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+
+            if (!detection) {
+
+                status.innerText =
+                    "❌ No face detected in your photo.";
+
+                tryAgain.style.display =
+                    "inline-block";
+
+                return;
+            }
+
+
+            /* =================================================
+               CREATE GUEST
+            ================================================= */
+
+            status.innerText =
+                "👤 Creating guest profile...";
+
+
+            const guestResponse =
+                await fetch(
+                    CREATE_GUEST_URL,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/x-www-form-urlencoded",
+
+                            "X-CSRFToken":
+                                getCookie(
+                                    "csrftoken"
+                                )
+                        },
+
+                        body:
+                            new URLSearchParams({
+                                guest_name:
+                                    guestName,
+
+                                wedding_id:
+                                    weddingId
+                            })
+                    }
+                );
+
+
+            if (!guestResponse.ok) {
+
+                throw new Error(
+                    "Guest could not be created."
+                );
+            }
+
+
+            const guestData =
+                await guestResponse.json();
+
+
+            if (!guestData.success) {
+
+                throw new Error(
+                    guestData.error ||
+                    "Guest creation failed."
+                );
+            }
+
+
+            guestId =
+                guestData.guest_id;
+
+
+            /* =================================================
+               SERVER MATCHING
+            ================================================= */
+
+            status.innerText =
+                "🔍 Finding your photos...";
+
+
+            const weddingData =
+                await getWeddingPhotos(
+                    weddingId,
+                    detection.descriptor
+                );
+
+
+            if (!weddingData.success) {
+
+                throw new Error(
+                    weddingData.error ||
+                    "Photo matching failed."
+                );
+            }
+
+
+            const matches =
+                weddingData.matches || [];
+
+
+            /* =================================================
+               RESULTS
+            ================================================= */
+
+            if (matches.length === 0) {
+
+                status.innerText =
+                    "❌ No matching photos found.";
+
+                tryAgain.style.display =
+                    "inline-block";
+
+                return;
+            }
+
+
+            status.innerText =
+                `🎉 ${matches.length} matching photo(s) found!`;
+
+
+            gallery.style.display =
+                "grid";
+
+
+            /* =================================================
+               LIGHTBOX
+            ================================================= */
+
+            let currentPhotoIndex = 0;
+
+
+            const lightbox =
+                document.getElementById(
+                    "lightbox"
+                );
+
+
+            const lightboxImage =
+                document.getElementById(
+                    "lightboxImage"
+                );
+
+
+            const lightboxClose =
+                document.getElementById(
+                    "lightboxClose"
+                );
+
+
+            const lightboxPrev =
+                document.getElementById(
+                    "lightboxPrev"
+                );
+
+
+            const lightboxNext =
+                document.getElementById(
+                    "lightboxNext"
+                );
+
+
+            const lightboxDownload =
+                document.getElementById(
+                    "lightboxDownload"
+                );
+
+
+            function openLightbox(
+                index
+            ) {
+
+                currentPhotoIndex =
+                    index;
+
+
+                const photo =
+                    matches[
+                        currentPhotoIndex
+                    ];
+
+
+                lightboxImage.src =
+                    photo.image;
+
+
+                lightboxDownload.href =
+                    photo.image;
+
+
+                lightbox.classList.add(
+                    "active"
+                );
+            }
+
+
+            function closeLightbox() {
+
+                lightbox.classList.remove(
+                    "active"
+                );
+
+
+                /*
+                 * Clear full-size image from memory
+                 * when lightbox closes.
+                 */
+
+                lightboxImage.src =
+                    "";
+            }
+
+
+            function showPrevious() {
+
+                currentPhotoIndex--;
+
+
+                if (
+                    currentPhotoIndex < 0
+                ) {
+
+                    currentPhotoIndex =
+                        matches.length - 1;
+                }
+
+
+                openLightbox(
+                    currentPhotoIndex
+                );
+            }
+
+
+            function showNext() {
+
+                currentPhotoIndex++;
+
+
+                if (
+                    currentPhotoIndex >=
+                    matches.length
+                ) {
+
+                    currentPhotoIndex = 0;
+                }
+
+
+                openLightbox(
+                    currentPhotoIndex
+                );
+            }
+
+
+            lightboxClose.onclick =
+                closeLightbox;
+
+
+            lightboxPrev.onclick =
+                showPrevious;
+
+
+            lightboxNext.onclick =
+                showNext;
+
+
+            lightbox.onclick =
+                function(event) {
+
+                    if (
+                        event.target ===
+                        lightbox
+                    ) {
+
+                        closeLightbox();
+                    }
+                };
+
+
+            /* =================================================
+               KEYBOARD
+            ================================================= */
+
+            document.onkeydown =
+                function(event) {
+
+                    if (
+                        !lightbox.classList.contains(
+                            "active"
+                        )
+                    ) {
+
+                        return;
+                    }
+
+
+                    if (
+                        event.key ===
+                        "Escape"
+                    ) {
+
+                        closeLightbox();
+                    }
+
+
+                    if (
+                        event.key ===
+                        "ArrowLeft"
+                    ) {
+
+                        showPrevious();
+                    }
+
+
+                    if (
+                        event.key ===
+                        "ArrowRight"
+                    ) {
+
+                        showNext();
+                    }
+                };
+
+
+            /* =================================================
+               PHOTO CARDS
+            ================================================= */
+
+            matches.forEach(
+                function(
+                    match,
+                    index
+                ) {
+
+                    const card =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    card.className =
+                        "photo-card";
+
+
+                    const img =
+                        document.createElement(
+                            "img"
+                        );
+
+
+                    img.src =
+                        match.image;
+
+
+                    /*
+                     * Lazy loading means browser does not
+                     * aggressively load every matched image
+                     * immediately.
+                     */
+
+                    img.loading =
+                        "lazy";
+
+
+                    img.decoding =
+                        "async";
+
+
+                    img.alt =
+                        "Wedding Photo";
+
+
+                    /* CLICK IMAGE */
+
+                    img.addEventListener(
+                        "click",
+                        function() {
+
+                            openLightbox(
+                                index
+                            );
+                        }
+                    );
+
+
+                    /* =================================================
+                       FAVORITE
+                    ================================================= */
+
+                    const favorite =
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    favorite.innerText =
+                        "♡ Favorite";
+
+
+                    favorite.style.display =
+                        "block";
+
+
+                    favorite.style.margin =
+                        "10px auto 0";
+
+
+                    favorite.style.padding =
+                        "9px 18px";
+
+
+                    favorite.style.border =
+                        "none";
+
+
+                    favorite.style.borderRadius =
+                        "8px";
+
+
+                    favorite.style.background =
+                        "#f3f3f3";
+
+
+                    favorite.style.color =
+                        "#222";
+
+
+                    favorite.style.cursor =
+                        "pointer";
+
+
+                    favorite.style.fontSize =
+                        "14px";
+
+
+                    favorite.addEventListener(
+                        "click",
+                        async function() {
+
+                            if (!guestId) {
+
+                                alert(
+                                    "Guest information is missing. Please try again."
+                                );
+
+                                return;
+                            }
+
+
+                            favorite.disabled =
+                                true;
+
+
+                            favorite.innerText =
+                                "⏳ Saving...";
+
+
+                            try {
+
+                                const response =
+                                    await fetch(
+                                        FAVORITE_URL,
+                                        {
+                                            method:
+                                                "POST",
+
+                                            headers: {
+                                                "Content-Type":
+                                                    "application/x-www-form-urlencoded",
+
+                                                "X-CSRFToken":
+                                                    getCookie(
+                                                        "csrftoken"
+                                                    )
+                                            },
+
+                                            body:
+                                                new URLSearchParams({
+                                                    guest_id:
+                                                        guestId,
+
+                                                    photo_id:
+                                                        match.id
+                                                })
+                                        }
+                                    );
+
+
+                                if (!response.ok) {
+
+                                    throw new Error(
+                                        "Favorite request failed."
+                                    );
+                                }
+
+
+                                const data =
+                                    await response.json();
+
+
+                                if (!data.success) {
+
+                                    throw new Error(
+                                        data.error ||
+                                        "Could not save favorite."
+                                    );
+                                }
+
+
+                                favorite.innerText =
+                                    "❤️ Favorite";
+
+
+                                favorite.style.background =
+                                    "#ffe5e5";
+
+
+                                favorite.style.color =
+                                    "#d00";
+
+                            }
+
+                            catch (error) {
+
+                                console.error(
+                                    error
+                                );
+
+
+                                favorite.disabled =
+                                    false;
+
+
+                                favorite.innerText =
+                                    "♡ Favorite";
+
+
+                                alert(
+                                    "Could not save favorite. Please try again."
+                                );
+                            }
+
+                        }
+                    );
+
+
+                    /* =================================================
+                       DOWNLOAD
+                    ================================================= */
+
+                    const download =
+                        document.createElement(
+                            "a"
+                        );
+
+
+                    download.href =
+                        match.image;
+
+
+                    download.download =
+                        "wedding-photo-" +
+                        match.id +
+                        ".jpg";
+
+
+                    download.innerText =
+                        "⬇ Download";
+
+
+                    download.className =
+                        "download-btn";
+
+
+                    /* =================================================
+                       CARD
+                    ================================================= */
+
+                    card.appendChild(
+                        img
+                    );
+
+
+                    card.appendChild(
+                        favorite
+                    );
+
+
+                    card.appendChild(
+                        download
+                    );
+
+
+                    gallery.appendChild(
+                        card
+                    );
+
+                }
+            );
+
+
+            tryAgain.style.display =
+                "inline-block";
+
+
+            /*
+             * Processing canvas is no longer required.
+             *
+             * Removing our reference allows the browser
+             * to reclaim memory.
+             */
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Guest Match Error:",
+                error
+            );
+
+
+            status.innerText =
+                "❌ " + (error.message || error);
+
+
+            tryAgain.style.display =
+                "inline-block";
+        }
+
+    }
+);
+
+
+/* =========================================================
+   CSRF COOKIE
+========================================================= */
+
+function getCookie(name) {
+
+    let cookieValue =
+        null;
+
+
+    if (
+        document.cookie &&
+        document.cookie !== ""
+    ) {
+
+        const cookies =
+            document.cookie.split(";");
+
+
+        for (
+            let cookie of cookies
+        ) {
+
+            cookie =
+                cookie.trim();
+
+
+            if (
+                cookie.substring(
+                    0,
+                    name.length + 1
+                ) ===
+                (name + "=")
+            ) {
+
+                cookieValue =
+                    decodeURIComponent(
+                        cookie.substring(
+                            name.length + 1
+                        )
+                    );
+
+
+                break;
+            }
+
+        }
+
+    }
+
+
+    return cookieValue;
+}
+
+
+/* =========================================================
+   IMPORTANT
+=========================================================
+
+   DO NOT load face-api models here.
+
+   Previously:
+       loadModels();
+
+   That caused models to load immediately when
+   the guest page opened.
+
+   Now models load only after the guest selects
+   a photo.
+
+========================================================= */
+
+
+</script>
+
+
+</body>
+
+</html>

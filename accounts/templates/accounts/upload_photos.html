@@ -1,0 +1,725 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Upload Wedding Photos</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            font-family: Arial, sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #f8f5f2,
+                    #eee7e1
+                );
+
+            color: #222;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 850px;
+
+            margin: 0 auto;
+            padding: 25px 18px 50px;
+        }
+
+        /* HEADER */
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 25px;
+        }
+
+        .back-btn {
+            text-decoration: none;
+
+            background: white;
+            color: #333;
+
+            padding: 10px 15px;
+
+            border-radius: 10px;
+
+            font-size: 14px;
+            font-weight: 600;
+
+            box-shadow:
+                0 4px 15px rgba(0,0,0,0.07);
+        }
+
+        .back-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .brand {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        /* MAIN CARD */
+
+        .upload-card {
+            background: white;
+
+            border-radius: 20px;
+
+            padding: 35px;
+
+            box-shadow:
+                0 12px 35px rgba(0,0,0,0.09);
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .heading-icon {
+            width: 65px;
+            height: 65px;
+
+            margin: 0 auto 15px;
+
+            border-radius: 50%;
+
+            background: #222;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 28px;
+        }
+
+        .heading h1 {
+            margin: 0;
+
+            font-size: 28px;
+        }
+
+        .wedding-name {
+            margin-top: 9px;
+
+            color: #777;
+
+            font-size: 15px;
+        }
+
+        /* UPLOAD AREA */
+
+        .upload-area {
+            border: 2px dashed #ccc;
+
+            border-radius: 16px;
+
+            padding: 40px 20px;
+
+            text-align: center;
+
+            background: #fafafa;
+
+            transition: 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: #888;
+            background: #f7f7f7;
+        }
+
+        .upload-icon {
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+
+        .upload-title {
+            font-size: 18px;
+            font-weight: 700;
+
+            margin-bottom: 7px;
+        }
+
+        .upload-description {
+            color: #777;
+            font-size: 14px;
+
+            margin-bottom: 20px;
+        }
+
+        .choose-btn {
+            display: inline-block;
+
+            background: #222;
+            color: white;
+
+            padding: 13px 24px;
+
+            border-radius: 10px;
+
+            cursor: pointer;
+
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .choose-btn:hover {
+            background: #000;
+        }
+
+        #photos {
+            display: none;
+        }
+
+        /* STATUS */
+
+        .status-box {
+            margin-top: 22px;
+
+            padding: 13px 15px;
+
+            border-radius: 10px;
+
+            background: #f6f6f6;
+
+            color: #666;
+
+            text-align: center;
+
+            font-size: 14px;
+        }
+
+        /* SUBMIT */
+
+        .submit-btn {
+            width: 100%;
+
+            margin-top: 22px;
+
+            padding: 14px;
+
+            border: none;
+
+            border-radius: 11px;
+
+            background: #222;
+            color: white;
+
+            font-size: 15px;
+            font-weight: 600;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #000;
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        /* INFO */
+
+        .info {
+            margin-top: 20px;
+
+            padding: 15px;
+
+            background: #faf7f5;
+
+            border-radius: 12px;
+
+            font-size: 13px;
+
+            color: #666;
+
+            line-height: 1.6;
+        }
+
+        .info strong {
+            color: #333;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 600px) {
+
+            .page {
+                padding: 15px 12px 35px;
+            }
+
+            .topbar {
+                align-items: flex-start;
+            }
+
+            .upload-card {
+                padding: 25px 17px;
+            }
+
+            .heading h1 {
+                font-size: 24px;
+            }
+
+            .upload-area {
+                padding: 30px 15px;
+            }
+
+            .back-btn {
+                font-size: 13px;
+                padding: 9px 12px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- TOP BAR -->
+
+    <div class="topbar">
+
+        <a
+            href="{% url 'dashboard' %}"
+            class="back-btn"
+        >
+            ← Dashboard
+        </a>
+
+        <div class="brand">
+            📷 Wedding Photo App
+        </div>
+
+    </div>
+
+
+    <!-- MAIN -->
+
+    <div class="upload-card">
+
+
+        <!-- HEADING -->
+
+        <div class="heading">
+
+            <div class="heading-icon">
+                📸
+            </div>
+
+            <h1>
+                Upload Wedding Photos
+            </h1>
+
+            <div class="wedding-name">
+
+                Wedding:
+                <strong>
+                    {{ wedding.event_name }}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- FORM -->
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            id="uploadForm"
+        >
+
+            {% csrf_token %}
+
+
+            <!-- UPLOAD AREA -->
+
+            <div class="upload-area">
+
+                <div class="upload-icon">
+                    🖼️
+                </div>
+
+                <div class="upload-title">
+                    Select Wedding Photos
+                </div>
+
+                <div class="upload-description">
+                    Choose multiple photos at once.
+                    Face data will be processed automatically.
+                </div>
+
+
+                <label
+                    for="photos"
+                    class="choose-btn"
+                >
+                    📁 Choose Photos
+                </label>
+
+
+                <input
+                    type="file"
+                    id="photos"
+                    name="photos"
+                    accept="image/*"
+                    multiple
+                    required
+                >
+
+            </div>
+
+
+            <!-- DESCRIPTORS -->
+
+            <div id="descriptorContainer"></div>
+
+
+            <!-- STATUS -->
+
+            <div
+                id="status"
+                class="status-box"
+            >
+                Select photos to upload.
+            </div>
+
+
+            <!-- SUBMIT -->
+
+            <button
+                type="submit"
+                id="uploadButton"
+                class="submit-btn"
+            >
+                📤 Upload Photos
+            </button>
+
+
+        </form>
+
+
+        <!-- INFO -->
+
+        <div class="info">
+
+            <strong>How it works:</strong><br>
+
+            Your photos are processed for face recognition
+            so guests can later find their wedding photos
+            using the Wedding QR code.
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- FACE API -->
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+
+<script>
+
+    const MODEL_URL =
+        "{% static 'models' %}";
+
+
+    const photosInput =
+        document.getElementById("photos");
+
+
+    const form =
+        document.getElementById("uploadForm");
+
+
+    const descriptorContainer =
+        document.getElementById(
+            "descriptorContainer"
+        );
+
+
+    const status =
+        document.getElementById("status");
+
+
+    const uploadButton =
+        document.getElementById("uploadButton");
+
+
+    async function loadModels() {
+
+        status.innerText =
+            "⏳ Loading face recognition models...";
+
+
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(
+            MODEL_URL + "/ssd_mobilenetv1"
+        );
+
+
+        await faceapi.nets.faceLandmark68Net.loadFromUri(
+            MODEL_URL + "/face_landmark_68"
+        );
+
+
+        await faceapi.nets.faceRecognitionNet.loadFromUri(
+            MODEL_URL + "/face_recognition"
+        );
+
+
+        status.innerText =
+            "✅ Ready. Select your photos.";
+
+    }
+
+
+    async function resizeImage(
+        file,
+        maxSize = 1000
+    ) {
+
+        const image =
+            await faceapi.bufferToImage(file);
+
+
+        let width = image.width;
+        let height = image.height;
+
+
+        if (
+            width <= maxSize &&
+            height <= maxSize
+        ) {
+            return image;
+        }
+
+
+        if (width > height) {
+
+            height =
+                Math.round(
+                    height *
+                    maxSize /
+                    width
+                );
+
+            width = maxSize;
+
+        } else {
+
+            width =
+                Math.round(
+                    width *
+                    maxSize /
+                    height
+                );
+
+            height = maxSize;
+
+        }
+
+
+        const canvas =
+            document.createElement("canvas");
+
+
+        canvas.width = width;
+        canvas.height = height;
+
+
+        const ctx =
+            canvas.getContext("2d");
+
+
+        ctx.drawImage(
+            image,
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        return canvas;
+
+    }
+
+
+    photosInput.addEventListener(
+        "change",
+        async () => {
+
+            const files =
+                photosInput.files;
+
+
+            if (!files.length) {
+                return;
+            }
+
+
+            descriptorContainer.innerHTML =
+                "";
+
+
+            uploadButton.disabled =
+                true;
+
+
+            status.innerText =
+                "🔍 Detecting faces...";
+
+
+            for (
+                let i = 0;
+                i < files.length;
+                i++
+            ) {
+
+                const file =
+                    files[i];
+
+
+                status.innerText =
+                    `🔍 Processing photo ${i + 1} of ${files.length}...`;
+
+
+                const image =
+                    await resizeImage(
+                        file,
+                        1000
+                    );
+
+
+                const detections =
+                    await faceapi
+                        .detectAllFaces(
+                            image,
+                            new faceapi.SsdMobilenetv1Options({
+                                minConfidence: 0.1
+                            })
+                        )
+                        .withFaceLandmarks()
+                        .withFaceDescriptors();
+
+
+                let descriptors = [];
+
+
+                detections.forEach(
+                    detection => {
+
+                        descriptors.push(
+                            Array.from(
+                                detection.descriptor
+                            )
+                        );
+
+                    }
+                );
+
+
+                const hidden =
+                    document.createElement(
+                        "input"
+                    );
+
+
+                hidden.type =
+                    "hidden";
+
+
+                hidden.name =
+                    "face_descriptors";
+
+
+                hidden.value =
+                    JSON.stringify(
+                        descriptors
+                    );
+
+
+                descriptorContainer.appendChild(
+                    hidden
+                );
+
+            }
+
+
+            status.innerText =
+                `✅ ${files.length} photo(s) ready to upload.`;
+
+
+            uploadButton.disabled =
+                false;
+
+        }
+    );
+
+
+    form.addEventListener(
+        "submit",
+        () => {
+
+            uploadButton.disabled =
+                true;
+
+            uploadButton.innerText =
+                "⏳ Uploading photos...";
+
+            status.innerText =
+                "Please wait while your photos are uploaded...";
+
+        }
+    );
+
+
+    loadModels();
+
+</script>
+
+
+</body>
+
+</html>

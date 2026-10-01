@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Photographer Dashboard</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f6fa;
+            color: #222;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            background: #111;
+            color: white;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .top-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-create {
+            background: #d4af37;
+            color: #111;
+        }
+
+        .btn-branding {
+            background: white;
+            color: #111;
+        }
+        .btn-drive {
+            background: rgb(77, 228, 215);
+            color: #111;
+        }
+
+        .btn-logout {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-upload {
+            background: #111;
+            color: white;
+        }
+
+        .btn-download {
+            background: #d4af37;
+            color: #111;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-gallery {
+            background: #048bf3;
+            color: white;
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 18px;
+        }
+
+        /* PHOTOGRAPHER PROFILE */
+        .photographer-profile {
+            background: white;
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .dashboard-logo {
+            width: 65px;
+            height: 65px;
+            object-fit: contain;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .photographer-profile h2 {
+            margin: 0 0 5px;
+            font-size: 21px;
+        }
+
+        .photographer-profile p {
+            margin: 0;
+            color: #777;
+            font-size: 14px;
+        }
+
+        /* WELCOME */
+        .welcome {
+            margin-bottom: 25px;
+        }
+
+        .welcome h2 {
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            color: #666;
+        }
+
+        .section-title {
+            margin-bottom: 18px;
+        }
+
+        /* WEDDING CARD */
+        .wedding-card {
+            background: white;
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .wedding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .wedding-title {
+            margin: 0 0 8px;
+            font-size: 23px;
+        }
+
+        .couple {
+            margin: 0;
+            color: #555;
+        }
+
+        .date {
+            margin-top: 8px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        /* ANALYTICS */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: #f7f7f7;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 25px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 13px;
+        }
+
+        /* ACTIONS */
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 18px 0;
+        }
+
+        /* QR */
+        .qr-section {
+            margin-top: 20px;
+            padding: 18px;
+            background: #fafafa;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .qr-section h4 {
+            margin-top: 0;
+        }
+
+        .qr-section img {
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+        }
+
+        /* PHOTOS */
+        .photos-title {
+            margin-top: 25px;
+            margin-bottom: 12px;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .more-photos{
+            margin-top: 12px;
+            padding: 10px;
+            text-align: center;
+            background: #f7f7f7;
+            border-radius: 10px;
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;        
+        }
+
+        .photo-item {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .photo-grid img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .photo-delete {
+            width: 100%;
+            border: none;
+            background: #dc3545;
+            color: white;
+            padding: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* EMPTY */
+        .empty {
+            color: #777;
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .no-weddings {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: #666;
+        }
+
+        /* MOBILE */
+        @media (max-width: 650px) {
+
+            .topbar {
+                align-items: stretch;
+            }
+
+            .topbar h1 {
+                font-size: 20px;
+            }
+
+            .top-buttons {
+                width: 100%;
+            }
+
+            .top-buttons .btn {
+                flex: 1;
+                text-align: center;
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+
+            .container {
+                margin-top: 20px;
+            }
+
+            .photographer-profile {
+                padding: 14px;
+                gap: 12px;
+            }
+
+            .dashboard-logo {
+                width: 55px;
+                height: 55px;
+            }
+
+            .photographer-profile h2 {
+                font-size: 18px;
+            }
+
+            .wedding-card {
+                padding: 16px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 7px;
+            }
+
+            .stat-box {
+                padding: 12px 5px;
+            }
+
+            .stat-number {
+                font-size: 20px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+
+            .wedding-title {
+                font-size: 20px;
+            }
+
+            .photo-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .photo-grid img {
+                height: 130px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+
+        <h1>Wedding Photo App</h1>
+
+        <div class="top-buttons">
+
+            <a
+                href="{% url 'create_wedding' %}"
+                class="btn btn-create"
+            >
+                ➕ Create Wedding
+            </a>
+
+            <a
+                href="{% url 'photographer_branding' %}"
+                class="btn btn-branding"
+            >
+                📷 Branding
+            </a>
+
+            <a
+                href="{% url 'google_drive' %}"
+                class="btn btn-drive"
+            >
+                ☁️ Connect Gdrive
+            </a>
+
+            <a
+                href="{% url 'logout' %}"
+                class="btn btn-logout"
+            >
+                🚪 Logout
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="container">
+
+        <!-- PHOTOGRAPHER PROFILE -->
+        <div class="photographer-profile">
+
+            {% if profile.logo %}
+
+                <img
+                    src="{{ profile.logo.url }}"
+                    alt="{{ profile.business_name }}"
+                    class="dashboard-logo"
+                >
+
+            {% endif %}
+
+            <div>
+
+                <h2>
+                    {{ profile.business_name|default:"Photographer" }}
+                </h2>
+
+                <p>
+                    Photographer Dashboard
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- WELCOME -->
+        <div class="welcome">
+
+            <h2>
+                Photographer Dashboard
+            </h2>
+
+            <p>
+                Welcome! Manage your weddings, photos and QR codes from here.
+            </p>
+
+        </div>
+
+
+        <!-- MY WEDDINGS -->
+        <h2 class="section-title">
+            💍 My Weddings
+        </h2>
+
+
+        {% if weddings %}
+
+            {% for wedding in weddings %}
+
+                <div class="wedding-card">
+
+                    <!-- WEDDING HEADER -->
+                    <div class="wedding-header">
+
+                        <div>
+
+                            <h3 class="wedding-title">
+                                {{ wedding.event_name }}
+                            </h3>
+
+                            <p class="couple">
+                                💑 {{ wedding.bride_name }}
+                                &
+                                {{ wedding.groom_name }}
+                            </p>
+
+                            <p class="date">
+                                📅 Wedding Date:
+                                {{ wedding.wedding_date }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ANALYTICS -->
+                    <div class="stats">
+
+                        <div class="stat-box">
+
+                            <span class="stat-number">
+                                {{ wedding.photos.count }}
+                            </span>
+
+                            <span class="stat-label">
+                                 Total Photos
+                            </span>
+
+                        </div>
+
+
+                        <div class="stat-box">
+
+                            <span class="stat-number">
+                                {{ wedding.photos.count }}
+                            </span>
+
+                            <span class="stat-label">
+                                👤 Face Data
+                            </span>
+
+                        </div>
+
+
+                        <div class="stat-box">
+
+                            <span class="stat-number">
+
+                                {% if wedding.qr_code %}
+                                    ✓
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </span>
+
+                            <span class="stat-label">
+                                📱 QR Ready
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ACTION BUTTONS -->
+                    <div class="actions">
+
+                        <a
+                            href="{% url 'upload_photos' wedding.id %}"
+                            class="btn btn-upload"
+                        >
+                            📤 Upload Photos
+                        </a>
+                        <a
+                            href="{% url 'wedding_gallery' wedding.id %}"
+                            class="btn btn-gallery"
+                        >
+                              Open Gallery
+                        </a>
+
+
+                        <form
+                            method="POST"
+                            action="{% url 'delete_wedding' wedding.id %}"
+                            style="display:inline;"
+                            onsubmit="return confirm('⚠️ Are you sure you want to delete this wedding?\n\nThis will permanently delete the wedding and all photos stored in its Google Drive folder as well.\n\nThis action cannot be undone.');"
+                        >
+
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="btn btn-delete"
+                            >
+                                Delete Wedding
+                            </button>
+
+                        </form>
+
+                    </div>
+
+
+                    <!-- QR CODE -->
+                    {% if wedding.qr_code %}
+
+                        <div class="qr-section">
+
+                            <h4>
+                                📱 Wedding QR Code
+                            </h4>
+
+                            <img
+                                src="{{ wedding.qr_code.url }}"
+                                alt="Wedding QR Code"
+                            >
+
+                            <br><br>
+
+                            <a
+                                href="{{ wedding.qr_code.url }}"
+                                download
+                                class="btn btn-download"
+                            >
+                                ⬇️ Download QR Code
+                            </a>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <!-- PHOTOS -->
+                    <h4 class="photos-title">
+                        🖼️ Wedding Photos
+                    </h4>
+
+
+                    <div class="photo-grid">
+
+                        {% for photo in wedding.photos.all|slice:":5" %}
+
+                            <div class="photo-item">
+
+                                <img
+                                    src="{{ photo.image.url }}"
+                                    alt="Wedding Photo"
+                                >
+
+                                <form
+                                    method="POST"
+                                    action="{% url 'delete_photo' photo.id %}"
+                                    onsubmit="return confirm('⚠️ Are you sure you want to delete this photo?\n\nThis will permanently delete the photo from Google Drive as well.\n\nThis action cannot be undone.');"
+                                >
+
+                                    {% csrf_token %}
+
+                                    <button
+                                        type="submit"
+                                        class="photo-delete"
+                                    >
+                                        🗑️ Delete
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        {% empty %}
+
+                            <p class="empty">
+                                No photos uploaded yet.
+                            </p>
+
+                        {% endfor %}
+
+                    </div>
+
+                    {% if wedding.photos.count > 5 %}
+
+                        <div class="more-photos">
+                            +{{ wedding.photos.count|add:"-5" }} more photos
+                        </div>
+
+                    {% endif %}
+                </div>
+
+            {% endfor %}
+
+
+        {% else %}
+
+            <div class="no-weddings">
+
+                <h3>
+                    💍 No weddings created yet
+                </h3>
+
+                <p>
+                    Create your first wedding event to get started.
+                </p>
+
+                <br>
+
+                <a
+                    href="{% url 'create_wedding' %}"
+                    class="btn btn-create"
+                >
+                    ➕ Create New Wedding
+                </a>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</body>
+</html>

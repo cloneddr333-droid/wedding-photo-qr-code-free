@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Select Google Drive Folder</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #222;
+        }
+
+        .topbar {
+            background: #111;
+            color: white;
+            padding: 18px 25px;
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 35px auto;
+            padding: 20px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #555;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.07);
+        }
+
+        .account {
+            background: #f1f5ff;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .account strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .folder-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .folder {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 16px;
+            border: 1px solid #e1e5ec;
+            border-radius: 12px;
+            transition: 0.2s;
+        }
+
+        .folder:hover {
+            border-color: #1a73e8;
+            background: #f8fbff;
+        }
+
+        .folder-name {
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .select-btn {
+            border: none;
+            background: #1a73e8;
+            color: white;
+            padding: 9px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .select-btn:hover {
+            opacity: 0.9;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #777;
+        }
+
+        @media (max-width: 600px) {
+
+            .container {
+                margin: 15px auto;
+                padding: 12px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            .folder {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .select-btn {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="topbar">
+        <h1>📁 Google Drive Folders</h1>
+    </div>
+
+    <div class="container">
+
+        <a
+            href="{% url 'google_drive' %}"
+            class="back"
+        >
+            ← Back to Google Drive
+        </a>
+
+        <div class="card">
+
+            <div class="account">
+
+                <strong>
+                    📧 {{ account.google_email }}
+                </strong>
+
+                <span>
+                    Select a folder from this Google Drive.
+                </span>
+
+            </div>
+
+            <h2>
+                Select Folder
+            </h2>
+
+            <p style="color:#666;">
+                Choose the folder containing the wedding photos.
+            </p>
+
+            {% if folders %}
+
+                <div class="folder-list">
+
+                    {% for folder in folders %}
+
+                        <div class="folder">
+
+                            <div class="folder-name">
+                                📁 {{ folder.name }}
+                            </div>
+
+                            <form
+                                method="POST"
+                                action="{% url 'connect_drive_folder' account.id %}"
+                                style="display:flex; gap:8px; align-items:center;"
+                            >
+                                {% csrf_token %}
+
+                                <input
+                                    type="hidden"
+                                    name="folder_id"
+                                    value="{{ folder.id }}"
+                                >
+
+                                <select
+                                    name="wedding_id"
+                                    required
+                                    style="
+                                        padding:9px;
+                                        border:1px solid #ddd;
+                                        border-radius:8px;
+                                        min-width:180px;
+                                    "
+                                >
+
+                                    <option value="">
+                                        Select Wedding
+                                    </option>
+
+                                    {% for wedding in request.user.photographerprofile.weddings.all %}
+                                        <option value="{{ wedding.id }}">
+                                            {{ wedding.event_name }}
+                                        </option>
+                                    {% endfor %}
+
+                                </select>
+
+                                <button
+                                    type="submit"
+                                    class="select-btn"
+                                >
+                                    Connect
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="empty">
+
+                    <div style="font-size:45px;">
+                        📂
+                    </div>
+
+                    <h3>
+                        No folders found
+                    </h3>
+
+                    <p>
+                        No folders were found in this Google Drive account.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        function selectFolder(folderId, folderName) {
+
+            const confirmed = confirm(
+                "Select this folder?\n\n" +
+                folderName +
+                "\n\n" +
+                "The photos from this folder can be synced."
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            /*
+             * Folder selection will be connected
+             * to the Wedding in the next step.
+             */
+
+            alert(
+                "Folder selected:\n\n" +
+                folderName +
+                "\n\nNext step will connect this folder to a Wedding."
+            );
+        }
+
+    </script>
+
+</body>
+
+</html>

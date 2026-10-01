@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Recognition Test</title>
+</head>
+
+<body>
+
+    <h1>Face Recognition Test 🤳</h1>
+
+    <input type="file" id="imageUpload" accept="image/*">
+
+    <br><br>
+
+    <img id="preview" width="400">
+
+    <p id="status">Please select a photo.</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+    <script>
+        const MODEL_URL = "{% static 'models' %}";
+
+        const imageUpload = document.getElementById("imageUpload");
+        const preview = document.getElementById("preview");
+        const status = document.getElementById("status");
+
+        async function loadModels() {
+            try {
+                status.innerText = "Loading face recognition models...";
+
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(
+                    MODEL_URL + "/ssd_mobilenetv1"
+                );
+
+                await faceapi.nets.faceLandmark68Net.loadFromUri(
+                    MODEL_URL + "/face_landmark_68"
+                );
+
+                await faceapi.nets.faceRecognitionNet.loadFromUri(
+                    MODEL_URL + "/face_recognition"
+                );
+
+                status.innerText =
+                    "✅ Models loaded. Select a photo.";
+
+            } catch (error) {
+                console.error(error);
+                status.innerText =
+                    "❌ Model loading failed. Check Console.";
+            }
+        }
+
+        imageUpload.addEventListener("change", async () => {
+
+            if (!imageUpload.files[0]) {
+                return;
+            }
+
+            const image = await faceapi.bufferToImage(
+                imageUpload.files[0]
+            );
+
+            preview.src = image.src;
+
+            status.innerText = "Detecting face...";
+
+            const detection = await faceapi
+                .detectSingleFace(
+                    image,
+                    new faceapi.SsdMobilenetv1Options({
+                        minConfidence: 0.1
+                    })
+                )
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!detection) {
+                status.innerText = "❌ No face detected.";
+                return;
+            }
+
+            status.innerText =
+                "✅ Face detected successfully!";
+        });
+
+        loadModels();
+    </script>
+
+</body>
+</html>

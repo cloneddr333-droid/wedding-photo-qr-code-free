@@ -1,0 +1,497 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Match Test</title>
+</head>
+
+<body>
+
+    <h1>Face Match Test 🤳</h1>
+
+    <h3>Wedding: {{ wedding.event_name }}</h3>
+
+    <input type="file" id="guestPhoto" accept="image/*">
+
+    <br><br>
+
+    <img id="preview" width="400">
+
+    <p id="status">Loading models...</p>
+
+
+    <!-- QR Scanner -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+    <!-- Face Recognition -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+
+    <script>
+
+        const MODEL_URL = "{% static 'models' %}";
+
+        const guestPhoto =
+            document.getElementById("guestPhoto");
+
+        const preview =
+            document.getElementById("preview");
+
+        const status =
+            document.getElementById("status");
+
+
+        // ==============================
+        // LOAD FACE RECOGNITION MODELS
+        // ==============================
+
+        async function loadModels() {
+
+            try {
+
+                status.innerText =
+                    "Loading face recognition models...";
+
+
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(
+                    MODEL_URL + "/ssd_mobilenetv1"
+                );
+
+
+                await faceapi.nets.faceLandmark68Net.loadFromUri(
+                    MODEL_URL + "/face_landmark_68"
+                );
+
+
+                await faceapi.nets.faceRecognitionNet.loadFromUri(
+                    MODEL_URL + "/face_recognition"
+                );
+
+
+                status.innerText =
+                    "✅ Models loaded. Select guest photo.";
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                status.innerText =
+                    "❌ Model loading failed.";
+
+            }
+        }
+
+
+        // ==============================
+        // READ QR CODE FROM IMAGE
+        // ==============================
+
+        async function readQRCode(image) {
+
+            const canvas =
+                document.createElement("canvas");
+
+            const ctx =
+                canvas.getContext("2d");
+
+
+            canvas.width = image.width;
+            canvas.height = image.height;
+
+
+            ctx.drawImage(
+                image,
+                0,
+                0,
+                image.width,
+                image.height
+            );
+
+
+            const imageData =
+                ctx.getImageData(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+
+            const qrCode =
+                jsQR(
+                    imageData.data,
+                    imageData.width,
+                    imageData.height
+                );
+
+
+            if (!qrCode) {
+
+                return null;
+
+            }
+
+
+            return qrCode.data;
+        }
+
+
+        // ==============================
+        // GUEST PHOTO SELECTED
+        // ==============================
+
+        guestPhoto.addEventListener(
+            "change",
+            async () => {
+
+                if (!guestPhoto.files[0]) {
+                    return;
+                }
+
+
+                // LOAD IMAGE
+
+                const image =
+                    await faceapi.bufferToImage(
+                        guestPhoto.files[0]
+                    );
+
+
+                preview.src = image.src;
+
+
+                // ==========================
+                // STEP 1 - READ QR
+                // ==========================
+
+                status.innerText =
+                    "🔍 Reading Wedding QR...";
+
+
+                const qrData =
+                    await readQRCode(image);
+
+
+                if (!qrData) {
+
+                    status.innerText =
+                        "❌ Wedding QR code not found.";
+
+                    return;
+                }
+
+
+                console.log(
+                    "QR DATA:",
+                    qrData
+                );
+                // ==========================
+                // GET WEDDING ID FROM QR
+                // ==========================
+
+                let qrWeddingId = null;
+
+                try {
+
+                    const qrUrl = new URL(qrData);
+
+                    const parts =
+                        qrUrl.pathname.split("/").filter(Boolean);
+
+                    const weddingIndex =
+                        parts.indexOf("wedding");
+
+                    if (
+                        weddingIndex !== -1 &&
+                        parts[weddingIndex + 1]
+                    ) {
+
+                        qrWeddingId =
+                            parts[weddingIndex + 1];
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Invalid QR URL:",
+                        error
+                    );
+
+                }
+
+
+                if (!qrWeddingId) {
+
+                    status.innerText =
+                        "❌ Could not identify Wedding from QR.";
+
+                    return;
+                }
+
+
+                console.log(
+                    "WEDDING ID FROM QR:",
+                    qrWeddingId
+                );
+
+
+                status.innerText =
+                    `✅ Wedding identified: ${qrWeddingId}`;
+                // ==========================
+                // STEP 2 - DETECT FACE
+                // ==========================
+
+                status.innerText =
+                    "🔍 Detecting guest face...";
+
+
+                const detection =
+                    await faceapi
+                        .detectSingleFace(
+                            image,
+                            new faceapi.SsdMobilenetv1Options({
+                                minConfidence: 0.1
+                            })
+                        )
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+
+                if (!detection) {
+
+                    status.innerText =
+                        "❌ No face detected.";
+
+                    return;
+                }
+
+
+                console.log(
+                    "Guest descriptor:",
+                    Array.from(
+                        detection.descriptor
+                    )
+                );
+
+
+                const guestDescriptor =
+                    detection.descriptor;
+
+
+                // ==========================
+                // WEDDING PHOTOS
+                // ==========================
+
+                const weddingPhotos = [
+
+                    {% for photo in photos %}
+
+                    {
+                        id: {{ photo.id }},
+
+                        image:
+                            "{{ photo.image.url|escapejs }}",
+
+                        descriptor:
+                            JSON.parse(
+                                '{{ photo.face_descriptor|escapejs }}'
+                            )
+                    },
+
+                    {% endfor %}
+
+                ];
+
+
+                // ==========================
+                // FACE MATCHING
+                // ==========================
+
+                let matches = [];
+
+
+                for (
+                    const photo
+                    of weddingPhotos
+                ) {
+
+
+                    for (
+                        const descriptor
+                        of photo.descriptor
+                    ) {
+
+
+                        const distance =
+                            faceapi.euclideanDistance(
+                                guestDescriptor,
+                                new Float32Array(
+                                    descriptor
+                                )
+                            );
+
+
+                        console.log(
+                            "Photo:",
+                            photo.id,
+                            "Distance:",
+                            distance
+                        );
+
+
+                        if (distance < 0.6) {
+
+                            matches.push({
+
+                                id: photo.id,
+
+                                image: photo.image,
+
+                                distance: distance
+
+                            });
+
+
+                            break;
+                        }
+
+                    }
+
+                }
+
+
+                console.log(
+                    "MATCHES:",
+                    matches
+                );
+
+
+                // ==========================
+                // SHOW MATCHING PHOTOS
+                // ==========================
+
+                if (matches.length > 0) {
+
+
+                    status.innerText =
+                        `✅ ${matches.length} matching photo(s) found!`;
+
+
+                    const gallery =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    gallery.style.display =
+                        "grid";
+
+                    gallery.style.gridTemplateColumns =
+                        "repeat(auto-fill, minmax(200px, 1fr))";
+
+                    gallery.style.gap =
+                        "15px";
+
+                    gallery.style.marginTop =
+                        "20px";
+
+
+                    matches.forEach(
+                        match => {
+
+
+                            const container =
+                                document.createElement(
+                                    "div"
+                                );
+
+
+                            const img =
+                                document.createElement(
+                                    "img"
+                                );
+
+
+                            img.src =
+                                match.image;
+
+                            img.width =
+                                200;
+
+                            img.style.display =
+                                "block";
+
+
+                            const download =
+                                document.createElement(
+                                    "a"
+                                );
+
+
+                            download.href =
+                                match.image;
+
+
+                            download.download =
+                                "wedding-photo-" +
+                                match.id +
+                                ".jpg";
+
+
+                            download.innerText =
+                                "Download";
+
+
+                            container.appendChild(
+                                img
+                            );
+
+
+                            container.appendChild(
+                                document.createElement(
+                                    "br"
+                                )
+                            );
+
+
+                            container.appendChild(
+                                download
+                            );
+
+
+                            gallery.appendChild(
+                                container
+                            );
+
+                        }
+                    );
+
+
+                    document.body.appendChild(
+                        gallery
+                    );
+
+
+                } else {
+
+
+                    status.innerText =
+                        "❌ No matching photos found.";
+
+                }
+
+            }
+        );
+
+
+        // START MODELS
+
+        loadModels();
+
+    </script>
+
+</body>
+</html>

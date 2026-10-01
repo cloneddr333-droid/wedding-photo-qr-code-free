@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Photographer Branding</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f6f6f6;
+            color: #222;
+        }
+
+        /* TOP BAR */
+
+        .topbar {
+            background: #111;
+            color: white;
+            padding: 16px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .topbar-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .dashboard-btn {
+            color: white;
+            text-decoration: none;
+            background: #2b2b2b;
+            border: 1px solid #444;
+            padding: 9px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .dashboard-btn:hover {
+            background: #444;
+        }
+
+        /* PAGE */
+
+        .page {
+            width: 92%;
+            max-width: 720px;
+            margin: 45px auto;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .heading h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .heading p {
+            margin-top: 9px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        /* CARD */
+
+        .branding-card {
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.07);
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .section-description {
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 15px;
+        }
+
+        /* INPUT */
+
+        .text-input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        .text-input:focus {
+            border-color: #777;
+        }
+
+        /* LOGO */
+
+        .logo-preview-box {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 18px;
+            border-radius: 16px;
+            border: 1px solid #e5e5e5;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .logo-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 10px;
+        }
+
+        .no-logo {
+            text-align: center;
+            color: #aaa;
+            font-size: 13px;
+            padding: 20px;
+        }
+
+        /* FILE INPUT */
+
+        .file-box {
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            background: #fafafa;
+        }
+
+        .file-box:hover {
+            border-color: #999;
+        }
+
+        .file-input {
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .file-note {
+            margin-top: 9px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* SAVE */
+
+        .save-btn {
+            width: 100%;
+            border: none;
+            background: #111;
+            color: white;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .save-btn:hover {
+            background: #333;
+        }
+
+        /* INFO */
+
+        .info-box {
+            margin-top: 20px;
+            padding: 14px 16px;
+            background: #f7f7f7;
+            border: 1px solid #e8e8e8;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 600px) {
+
+            .topbar {
+                padding: 14px 15px;
+            }
+
+            .topbar-title {
+                font-size: 16px;
+            }
+
+            .dashboard-btn {
+                padding: 8px 11px;
+                font-size: 13px;
+            }
+
+            .page {
+                width: 94%;
+                margin: 30px auto;
+            }
+
+            .heading h1 {
+                font-size: 25px;
+            }
+
+            .branding-card {
+                padding: 22px 17px;
+                border-radius: 15px;
+            }
+
+            .logo-preview-box {
+                width: 130px;
+                height: 130px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+<!-- TOP BAR -->
+
+<div class="topbar">
+
+    <div class="topbar-title">
+        📸 Photographer Branding
+    </div>
+
+    <a
+        href="{% url 'dashboard' %}"
+        class="dashboard-btn"
+    >
+        ← Dashboard
+    </a>
+
+</div>
+
+
+<!-- PAGE -->
+
+<div class="page">
+
+
+    <div class="heading">
+
+        <h1>
+            Your Brand
+        </h1>
+
+        <p>
+            Customize how your photography business appears to guests.
+        </p>
+
+    </div>
+
+
+    <!-- BRANDING CARD -->
+
+    <div class="branding-card">
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            {% csrf_token %}
+
+
+            <!-- BUSINESS NAME -->
+
+            <div class="section">
+
+                <div class="section-title">
+                    Business / Studio Name
+                </div>
+
+                <div class="section-description">
+                    This name will be displayed with your wedding photos.
+                </div>
+
+                <input
+                    type="text"
+                    name="business_name"
+                    value="{{ profile.business_name }}"
+                    placeholder="Your Studio Name"
+                    class="text-input"
+                >
+
+            </div>
+
+
+            <!-- LOGO -->
+
+            <div class="section">
+
+                <div class="section-title">
+                    Photographer Logo
+                </div>
+
+                <div class="section-description">
+                    Upload your studio or photography business logo.
+                </div>
+
+
+                <div class="logo-preview-box">
+
+                    {% if profile.logo %}
+
+                        <img
+                            src="{{ profile.logo.url }}"
+                            alt="Photographer Logo"
+                            class="logo-preview"
+                        >
+
+                    {% else %}
+
+                        <div class="no-logo">
+                            No logo uploaded yet.
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="file-box">
+
+                    <input
+                        type="file"
+                        name="logo"
+                        accept="image/*"
+                        class="file-input"
+                    >
+
+                    <div class="file-note">
+                        Recommended: clear JPG or PNG logo
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- SAVE -->
+
+            <button
+                type="submit"
+                class="save-btn"
+            >
+                💾 Save Branding
+            </button>
+
+
+            <!-- INFO -->
+
+            <div class="info-box">
+
+                Your branding will appear on the guest photo
+                matching page, helping guests recognize your
+                photography studio.
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+</div>
+
+
+</body>
+</html>

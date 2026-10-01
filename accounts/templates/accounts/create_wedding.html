@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Create Wedding | Wedding Photo App</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(
+                    circle at top left,
+                    #fff8e7 0%,
+                    #f5f6fa 45%,
+                    #eef0f5 100%
+                );
+            color: #222;
+        }
+
+        /* TOP BAR */
+
+        .topbar {
+            background: #111;
+            color: white;
+            padding: 18px 25px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            font-size: 25px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 21px;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: white;
+            border: 1px solid #555;
+            padding: 9px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: white;
+            color: #111;
+        }
+
+
+        /* MAIN */
+
+        .page {
+            width: 100%;
+            max-width: 850px;
+
+            margin: 45px auto;
+            padding: 0 20px;
+        }
+
+
+        /* HEADER */
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .page-header .icon {
+            width: 70px;
+            height: 70px;
+
+            margin: 0 auto 15px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #fff4cf;
+            border-radius: 50%;
+
+            font-size: 34px;
+
+            box-shadow:
+                0 8px 25px rgba(212, 175, 55, 0.18);
+        }
+
+        .page-header h2 {
+            margin: 0 0 8px;
+            font-size: 30px;
+        }
+
+        .page-header p {
+            margin: 0;
+            color: #777;
+            font-size: 15px;
+        }
+
+
+        /* CARD */
+
+        .form-card {
+            background: white;
+
+            border-radius: 20px;
+
+            padding: 35px;
+
+            box-shadow:
+                0 12px 35px rgba(0, 0, 0, 0.09);
+
+            border: 1px solid #eee;
+        }
+
+
+        /* FORM */
+
+        .form-grid {
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 22px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            margin-bottom: 8px;
+
+            font-size: 14px;
+            font-weight: bold;
+
+            color: #333;
+        }
+
+        .required {
+            color: #dc3545;
+        }
+
+        input {
+            width: 100%;
+
+            padding: 13px 14px;
+
+            border: 1px solid #d8d8d8;
+            border-radius: 10px;
+
+            font-size: 15px;
+
+            background: #fafafa;
+
+            outline: none;
+
+            transition: 0.2s;
+        }
+
+        input:focus {
+            background: white;
+
+            border-color: #d4af37;
+
+            box-shadow:
+                0 0 0 3px rgba(212, 175, 55, 0.15);
+        }
+
+        input::placeholder {
+            color: #aaa;
+        }
+
+
+        /* INFO */
+
+        .info-box {
+            margin-top: 28px;
+
+            padding: 17px 18px;
+
+            background: #fffaf0;
+
+            border: 1px solid #f0dfaa;
+
+            border-radius: 12px;
+
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .info-icon {
+            font-size: 20px;
+        }
+
+        .info-text {
+            color: #665b3b;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-text strong {
+            color: #3f3520;
+        }
+
+
+        /* BUTTONS */
+
+        .form-actions {
+            margin-top: 30px;
+
+            display: flex;
+            gap: 12px;
+
+            justify-content: flex-end;
+        }
+
+        .btn {
+            border: none;
+
+            border-radius: 10px;
+
+            padding: 13px 22px;
+
+            font-size: 14px;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            text-decoration: none;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            transition: 0.2s;
+        }
+
+        .btn-cancel {
+            background: #f1f1f1;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #e4e4e4;
+        }
+
+        .btn-create {
+            background: #d4af37;
+            color: #111;
+
+            box-shadow:
+                0 5px 15px rgba(212, 175, 55, 0.22);
+        }
+
+        .btn-create:hover {
+            background: #c39f2f;
+
+            transform: translateY(-1px);
+        }
+
+
+        /* FOOTER NOTE */
+
+        .bottom-note {
+            text-align: center;
+
+            margin-top: 22px;
+
+            color: #888;
+
+            font-size: 12px;
+        }
+
+
+        /* MOBILE */
+
+        @media (max-width: 650px) {
+
+            .topbar {
+                padding: 15px 16px;
+            }
+
+            .brand h1 {
+                font-size: 18px;
+            }
+
+            .back-btn {
+                padding: 8px 11px;
+                font-size: 12px;
+            }
+
+            .page {
+                margin: 30px auto;
+                padding: 0 14px;
+            }
+
+            .page-header {
+                margin-bottom: 22px;
+            }
+
+            .page-header .icon {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+            }
+
+            .page-header h2 {
+                font-size: 25px;
+            }
+
+            .page-header p {
+                font-size: 13px;
+            }
+
+            .form-card {
+                padding: 22px 18px;
+                border-radius: 16px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+
+            .full-width {
+                grid-column: auto;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .info-box {
+                padding: 14px;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- TOP BAR -->
+
+    <header class="topbar">
+
+        <div class="brand">
+
+            <span class="brand-icon">
+                💍
+            </span>
+
+            <h1>
+                Wedding Photo App
+            </h1>
+
+        </div>
+
+
+        <a
+            href="{% url 'dashboard' %}"
+            class="back-btn"
+        >
+            ← Dashboard
+        </a>
+
+    </header>
+
+
+
+    <!-- MAIN -->
+
+    <main class="page">
+
+
+        <!-- PAGE HEADER -->
+
+        <div class="page-header">
+
+            <div class="icon">
+                💍
+            </div>
+
+            <h2>
+                Create New Wedding
+            </h2>
+
+            <p>
+                Set up your wedding event and generate its QR code.
+            </p>
+
+        </div>
+
+
+
+        <!-- FORM CARD -->
+
+        <div class="form-card">
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+
+                <div class="form-grid">
+
+
+                    <!-- EVENT NAME -->
+
+                    <div class="form-group full-width">
+
+                        <label for="event_name">
+                            Event Name
+                            <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="event_name"
+                            name="event_name"
+                            placeholder="Example: Sharma Wedding"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- BRIDE -->
+
+                    <div class="form-group">
+
+                        <label for="bride_name">
+                            Bride Name
+                            <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="bride_name"
+                            name="bride_name"
+                            placeholder="Enter bride name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- GROOM -->
+
+                    <div class="form-group">
+
+                        <label for="groom_name">
+                            Groom Name
+                            <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="groom_name"
+                            name="groom_name"
+                            placeholder="Enter groom name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- DATE -->
+
+                    <div class="form-group full-width">
+
+                        <label for="wedding_date">
+                            Wedding Date
+                            <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="date"
+                            id="wedding_date"
+                            name="wedding_date"
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- INFO -->
+
+                <div class="info-box">
+
+                    <div class="info-icon">
+                        📱
+                    </div>
+
+                    <div class="info-text">
+
+                        <strong>What happens next?</strong>
+
+                        <br>
+
+                        Your wedding event will be created and a unique
+                        QR code will be generated automatically.
+
+                        You can then upload wedding photos and share
+                        the QR code with guests.
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- ACTIONS -->
+
+                <div class="form-actions">
+
+                    <a
+                        href="{% url 'dashboard' %}"
+                        class="btn btn-cancel"
+                    >
+                        Cancel
+                    </a>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-create"
+                    >
+                        💍 Create Wedding
+                    </button>
+
+                </div>
+
+
+            </form>
+
+        </div>
+
+
+        <div class="bottom-note">
+            All fields marked with * are required.
+        </div>
+
+
+    </main>
+
+</body>
+
+</html>

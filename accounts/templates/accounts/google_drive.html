@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive</title>
+</head>
+<style>
+    body{
+        margin: 0;
+        font-family: arial,sans-serif;
+        background: #f5f7fb;
+    }
+    .container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0.5px 20px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+    h1 {
+        margin-top: 0;
+    }
+    .connect-btn{
+        display: inline-block;
+        padding: 13px 20px;
+        background: #1a73e8;
+        color: white;
+        text-decoration: none;
+        border-radius: 10px;
+        margin-top: 12px;
+    }
+    .drive-connectt{
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        margin-top: 12px;
+    }
+    .active{
+        color: green;
+        font-weight: bold;
+    }
+    .back{
+        display: inline-block;
+        margin-bottom: 20px;
+        text-decoration: none;
+        color: #555;
+    }
+</style>
+<body>
+    <div class="container">
+        {% if error %}
+            <div style="
+            background: #ffe5e5;
+            color: #b00020;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ffb3b3;
+            ">
+                <strong>Google Drive Connection Error.</strong><br>
+                {{error}}
+            </div>
+        {% endif %}
+        <a href="{% url 'dashboard' %}" class="back">
+            Back to Dashboard
+        </a>
+        <div class="card">
+            <h1>♻ Google Drive</h1>
+            <p>Connect your Google Drive to store and manage wedding photos.</p>
+            <a href="{% url 'google_drive_connect' %}" class="connect-btn">+ Connect Google Drive </a>
+        </div>
+        <div class="card">
+            <h2>Connected Drives</h2>
+            {% if drive_accounts %}
+                {% for account in drive_accounts %}
+                    <div class="drive-connect">
+                        <strong>
+                            📧{{account.google_email}}
+                        </strong>
+                        {% if account.is_active %}
+                            <div class="active">
+                                🌑 Active
+                            </div>
+                        {% else %}
+                            <div>
+                                🌑Inactive
+                            </div>
+                        {% endif %}
+                        <a
+                            href="{% url 'google_drive_folders' account.id %}"
+                            style="
+                                display:inline-block;
+                                margin-top:12px;
+                                margin-right:6px;
+                                background:#1a73e8;
+                                color:white;
+                                text-decoration:none;
+                                padding:9px 15px;
+                                border-radius:8px;
+                                font-weight:600;
+                            "
+                        >
+                            📁 Browse Folders
+                        </a>
+                        <form
+                            method="POST"
+                            action="{% url 'disconnect_google_drive' account.id %}"
+                            onsubmit="return confirm(
+                                'Are you sure you want to disconnect this Google Drive account?\n\n',
+                                'Your Google Drive files and folders will NOT be deleted.'
+                            );"
+                            style="margin-top:12px;"
+                        >
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                style="
+                                    background:#dc3545;
+                                    color:white;
+                                    border:none;
+                                    padding:9px 15px;
+                                    border-radius:8px;
+                                    cursor:pointer;
+                                    font-weight:600;
+                                "
+                            >
+                                Disconnect
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                    <p>No Google Drive account connected yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    
+</body>
+</html>

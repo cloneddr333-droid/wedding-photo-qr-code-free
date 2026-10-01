@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Photographer Login</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f8f5f2, #eee7e1);
+            color: #222;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 38px 32px;
+            border-radius: 20px;
+
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.10);
+            text-align: center;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+
+            margin: 0 auto 18px;
+
+            border-radius: 50%;
+            background: #222;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 30px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 27px;
+        }
+
+        .subtitle {
+            margin: 9px 0 28px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        .error {
+            background: #fff0f0;
+            color: #c62828;
+
+            padding: 11px 12px;
+            border-radius: 9px;
+
+            margin-bottom: 18px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 17px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 7px;
+
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 13px 14px;
+
+            border: 1px solid #ddd;
+            border-radius: 10px;
+
+            font-size: 15px;
+            outline: none;
+
+            transition: 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #222;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 65px;
+        }
+
+        .show-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+
+            transform: translateY(-50%);
+
+            border: none;
+            background: transparent;
+
+            color: #666;
+            font-size: 12px;
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+        .login-btn {
+            width: 100%;
+            margin-top: 8px;
+
+            padding: 14px;
+
+            border: none;
+            border-radius: 11px;
+
+            background: #222;
+            color: white;
+
+            font-size: 15px;
+            font-weight: 600;
+
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .login-btn:hover {
+            background: #000;
+            transform: translateY(-1px);
+        }
+
+        .footer {
+            margin-top: 24px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .login-wrapper {
+                padding: 15px;
+            }
+
+            .login-card {
+                padding: 30px 22px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-wrapper">
+
+    <div class="login-card">
+
+        <div class="logo">
+            📷
+        </div>
+
+        <h1>Photographer Login</h1>
+
+        <p class="subtitle">
+            Manage your wedding photos in one place
+        </p>
+
+        {% if error %}
+            <div class="error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+            <div class="input-group">
+                <label for="username">
+                    Username
+                </label>
+
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    required
+                >
+            </div>
+
+            <div class="input-group">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <div class="password-wrapper">
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="show-password"
+                        onclick="togglePassword()"
+                    >
+                        SHOW
+                    </button>
+
+                </div>
+
+            </div>
+
+            <button
+                type="submit"
+                class="login-btn"
+            >
+                Login
+            </button>
+
+        </form>
+
+        <div class="footer">
+            Wedding Photo App
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    function togglePassword() {
+
+        const password =
+            document.getElementById("password");
+
+        const button =
+            document.querySelector(".show-password");
+
+        if (password.type === "password") {
+
+            password.type = "text";
+            button.textContent = "HIDE";
+
+        } else {
+
+            password.type = "password";
+            button.textContent = "SHOW";
+
+        }
+    }
+</script>
+
+</body>
+</html>
+
