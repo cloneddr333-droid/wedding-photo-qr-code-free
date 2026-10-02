@@ -171,11 +171,16 @@ def get_drive_credentials(drive_account):
     Refresh the access token automatically when it has expired.
     """
 
-    client_secret_file = os.path.join(
-        settings.BASE_DIR,
-        "credentials",
-        "client_secret.json"
+    client_secret_file = os.environ.get(
+        "GOOGLE_CLIENT_SECRET_FILE"
     )
+
+    if not client_secret_file:
+        client_secret_file = os.path.join(
+            settings.BASE_DIR,
+            "credentials",
+            "client_secret.json"
+        )
 
     with open(
         client_secret_file,
@@ -1820,11 +1825,16 @@ def connect_drive_folder(
 @login_required
 def google_drive_connect(request):
 
-    client_secret_file = os.path.join(
-        settings.BASE_DIR,
-        "credentials",
-        "client_secret.json"
+    client_secret_file = os.environ.get(
+        "GOOGLE_CLIENT_SECRET_FILE"
     )
+
+    if not client_secret_file:
+        client_secret_file = os.path.join(
+            settings.BASE_DIR,
+            "credentials",
+            "client_secret.json"
+        )
 
     flow = Flow.from_client_secrets_file(
         client_secret_file,
@@ -1873,11 +1883,16 @@ def google_drive_callback(request):
             }
         )
 
-    client_secret_file = os.path.join(
-        settings.BASE_DIR,
-        "credentials",
-        "client_secret.json"
+    client_secret_file = os.environ.get(
+        "GOOGLE_CLIENT_SECRET_FILE"
     )
+
+    if not client_secret_file:
+        client_secret_file = os.path.join(
+            settings.BASE_DIR,
+            "credentials",
+            "client_secret.json"
+        )
 
     flow = Flow.from_client_secrets_file(
         client_secret_file,
