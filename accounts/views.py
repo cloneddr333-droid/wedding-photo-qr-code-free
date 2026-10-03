@@ -1825,19 +1825,17 @@ def connect_drive_folder(
 @login_required
 def google_drive_connect(request):
 
-    client_secret_file = os.environ.get(
-        "GOOGLE_CLIENT_SECRET_FILE"
-    )
+    
 
-    if not client_secret_file:
-        client_secret_file = os.path.join(
-            settings.BASE_DIR,
-            "credentials",
-            "client_secret.json"
-        )
-
-    flow = Flow.from_client_secrets_file(
-        client_secret_file,
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
+                "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET"),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
+        },
         scopes=[
             "https://www.googleapis.com/auth/drive",
         ],
@@ -1883,19 +1881,17 @@ def google_drive_callback(request):
             }
         )
 
-    client_secret_file = os.environ.get(
-        "GOOGLE_CLIENT_SECRET_FILE"
-    )
+    
 
-    if not client_secret_file:
-        client_secret_file = os.path.join(
-            settings.BASE_DIR,
-            "credentials",
-            "client_secret.json"
-        )
-
-    flow = Flow.from_client_secrets_file(
-        client_secret_file,
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
+                "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET"),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
+        },
         scopes=[
             "https://www.googleapis.com/auth/drive",
         ],
