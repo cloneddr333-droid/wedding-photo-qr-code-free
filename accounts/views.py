@@ -1828,7 +1828,7 @@ def disconnect_google_drive(
         connections = (
             WeddingDriveConnection.objects.filter(
                 drive_account = account,
-                wedding_photographer = profile
+                wedding__photographer = profile
             ).select_related("wedding")
         )
 
