@@ -104,6 +104,12 @@ class Photo(models.Model):
     blank=True,
     null=True 
     )
+    drive_connection = models.ForeignKey(
+        "WeddingDriveConnection",
+        on_delete = models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="photos")
 
     uploaded_at = models.DateTimeField(
         auto_now_add=True
@@ -187,6 +193,31 @@ class GoogleDriveAccounts(models.Model):
     def __str__(self):
         return self.google_email
 
+class WeddingDriveConnection(models.Model):
+    wedding = models.ForeignKey(
+        Wedding,
+        on_delete=models.CASCADE,
+        related_name="drive_connectoins"
+    )
+    drive_account = models.ForeignKey(
+        GoogleDriveAccounts,
+        on_delete=models.CASCADE,
+        related_name="wedding_connecitons"
+    )
+    folder_id=models.CharField(
+        max_length=200
+    )
+    created_at= models.DateTimeField(
+        auto_now_add=True
+    )
+    class Meta:
+        unique_together = (
+            "wedding",
+            "drive_account",
+            "folder_id"
+        )
+    def __str__(self) :
+        return f"{self.wedding.event_name} - {self.drive_account.google_email}"
 
 # class Event(models.Model):
 #     photographer = models.ForeignKey(

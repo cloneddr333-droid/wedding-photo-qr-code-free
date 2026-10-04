@@ -7,17 +7,12 @@ from .models import (
     Wedding,
     Photo,
     GoogleDriveAccounts,
+    WeddingDriveConnection,
     Guest,
     Favorite,
 )
-import qrcode
-import json
-import mimetypes
-import os
-import math
-
+import qrcode, math, os, mimetypes, json
 from io import BytesIO
-
 from django.core.files.base import ContentFile
 from django.urls import reverse
 from django.http import JsonResponse
@@ -338,72 +333,146 @@ def upload_photo_with_fallback(
     wedding
 ):
     """
-    Try the wedding's current Drive first,
-    then other active connected Drive accounts.
+    Upload photo to a connected Wedding Drive.
 
-    If another account is used successfully,
-    create/use a wedding folder there and update
-    the Wedding record so future photos use the
-    new account.
+    Try the wedding's existing Drive connections first.
+    If no usable connection exists, create a wedding
+    folder in an active Drive account and create a
+    WeddingDriveConnection.
+
+    Returns the Google Drive file ID on success.
     """
 
     profile = wedding.photographer
 
-    accounts = list(
+    # ---------------------------------------------
+    # GET ALL ACTIVE CONNECTIONS
+    # ---------------------------------------------
+
+    connections = list(
+        WeddingDriveConnection.objects.filter(
+            wedding=wedding,
+            drive_account__photographer=profile,
+            drive_account__is_active=True
+        )
+        .select_related("drive_account")
+        .order_by("id")
+    )
+
+    # ---------------------------------------------
+    # BACKWARD COMPATIBILITY
+    # ---------------------------------------------
+    # If old Wedding fields exist but connection
+    # record does not, create the connection.
+
+    if not connections:
+
+        if (
+            wedding.drive_account
+            and wedding.drive_folder_id
+            and wedding.drive_account.is_active
+        ):
+
+            connection, created = (
+                WeddingDriveConnection.objects.get_or_create(
+                    wedding=wedding,
+                    drive_account=wedding.drive_account,
+                    folder_id=wedding.drive_folder_id
+                )
+            )
+
+            connections = [connection]
+
+    # ---------------------------------------------
+    # TRY EXISTING CONNECTIONS
+    # ---------------------------------------------
+
+    for connection in connections:
+
+        drive_account = connection.drive_account
+        folder_id = connection.folder_id
+
+        drive_file_id = upload_photo_to_drive(
+            photo,
+            wedding,
+            drive_account,
+            folder_id
+        )
+
+        if drive_file_id:
+
+            photo.drive_connection = connection
+
+            photo.drive_file_id = drive_file_id
+
+            photo.save(
+                update_fields=[
+                    "drive_connection",
+                    "drive_file_id"
+                ]
+            )
+
+            print(
+                "Photo uploaded to Drive:",
+                drive_account.google_email,
+                "Connection:",
+                connection.id,
+                "File:",
+                drive_file_id
+            )
+
+            return drive_file_id
+
+    # ---------------------------------------------
+    # NO EXISTING CONNECTION WORKED
+    # ---------------------------------------------
+    # Try active Drive accounts and create a new
+    # WeddingDriveConnection when needed.
+
+    accounts = (
         GoogleDriveAccounts.objects.filter(
             photographer=profile,
             is_active=True
-        ).order_by("-created_at")
-    )
-
-    if not accounts:
-        return None
-
-    ordered_accounts = []
-
-    if (
-        wedding.drive_account
-        and wedding.drive_account.is_active
-    ):
-
-        ordered_accounts.append(
-            wedding.drive_account
         )
+        .order_by("-created_at")
+    )
 
     for account in accounts:
 
-        if (
-            not wedding.drive_account
-            or account.id != wedding.drive_account.id
+        # Skip accounts already tried above.
+        if any(
+            connection.drive_account_id == account.id
+            for connection in connections
         ):
+            continue
 
-            ordered_accounts.append(account)
+        # -----------------------------------------
+        # CREATE WEDDING FOLDER
+        # -----------------------------------------
 
-    for account in ordered_accounts:
-
-        folder_id = None
-
-        # Reuse current wedding folder
-        # when it belongs to this account.
-        if (
-            wedding.drive_account
-            and wedding.drive_account.id == account.id
-            and wedding.drive_folder_id
-        ):
-
-            folder_id = wedding.drive_folder_id
-
-        # Switching to another account:
-        # create a new wedding folder.
-        if not folder_id:
-
-            folder_id = create_drive_folder_for_wedding(
-                wedding,
-                account
-            )
+        folder_id = create_drive_folder_for_wedding(
+            wedding,
+            account
+        )
 
         if not folder_id:
             continue
+
+        # -----------------------------------------
+        # CREATE MULTI-DRIVE CONNECTION
+        # -----------------------------------------
+
+        connection, created = (
+            WeddingDriveConnection.objects.get_or_create(
+                wedding=wedding,
+                drive_account=account,
+                folder_id=folder_id
+            )
+        )
+
+        # -----------------------------------------
+        # TRY UPLOAD
+        # -----------------------------------------
 
         drive_file_id = upload_photo_to_drive(
             photo,
@@ -414,11 +483,20 @@ def upload_photo_with_fallback(
 
         if drive_file_id:
 
-            if (
-                not wedding.drive_account
-                or wedding.drive_account.id != account.id
-                or wedding.drive_folder_id != folder_id
-            ):
+            photo.drive_connection = connection
+
+            photo.drive_file_id = drive_file_id
+
+            photo.save(
+                update_fields=[
+                    "drive_connection",
+                    "drive_file_id"
+                ]
+            )
+
+            # Keep old fields only for backward
+            # compatibility.
+            if not wedding.drive_account:
 
                 wedding.drive_account = account
                 wedding.drive_folder_id = folder_id
@@ -430,7 +508,25 @@ def upload_photo_with_fallback(
                     ]
                 )
 
+            print(
+                "Photo uploaded using fallback Drive:",
+                account.google_email,
+                "Connection:",
+                connection.id,
+                "File:",
+                drive_file_id
+            )
+
             return drive_file_id
+
+    # ---------------------------------------------
+    # ALL DRIVES FAILED
+    # ---------------------------------------------
+
+    print(
+        "Photo upload failed on all connected "
+        "Google Drive accounts."
+    )
 
     return None
 
@@ -477,10 +573,13 @@ def create_wedding(request):
         # GOOGLE DRIVE
         # -------------------------------------------------
 
-        drive_accounts = GoogleDriveAccounts.objects.filter(
-            photographer=profile,
-            is_active=True
-        ).order_by("-created_at")
+        drive_accounts = (
+            GoogleDriveAccounts.objects.filter(
+                photographer=profile,
+                is_active=True
+            )
+            .order_by("-created_at")
+        )
 
         for drive_account in drive_accounts:
 
@@ -490,6 +589,30 @@ def create_wedding(request):
             )
 
             if folder_id:
+
+                # -----------------------------------------
+                # CREATE MULTI-DRIVE CONNECTION
+                # -----------------------------------------
+
+                connection, created = (
+                    WeddingDriveConnection.objects.get_or_create(
+                        wedding=wedding,
+                        drive_account=drive_account,
+                        folder_id=folder_id
+                    )
+                )
+
+                print(
+                    "Wedding Drive connection created:",
+                    connection.id,
+                    drive_account.google_email,
+                    folder_id
+                )
+
+                # -----------------------------------------
+                # KEEP OLD FIELDS FOR BACKWARD
+                # COMPATIBILITY
+                # -----------------------------------------
 
                 wedding.drive_account = drive_account
                 wedding.drive_folder_id = folder_id
@@ -636,124 +759,174 @@ def sync_drive_photos(
         photographer=profile
     )
 
-    if (
-        not wedding.drive_account
-        or not wedding.drive_folder_id
-    ):
+    #get all the connected drive folders 
 
-        return redirect(
-            "dashboard"
-        )
+    connections = (
+        WeddingDriveConnection.objects.filter(
+            wedding = wedding,
+            drive_account__is_active = True
+        ).select_related("drive_account").order_by("id"))
 
-    try:
-
-        credentials = get_drive_credentials(
+    #backward compatibility
+    if not connections.exists():
+        if (
             wedding.drive_account
-        )
-
-        drive_service = build(
-            "drive",
-            "v3",
-            credentials=credentials
-        )
-
-        results = drive_service.files().list(
-            q=(
-                f"'{wedding.drive_folder_id}' in parents "
-                "and trashed = false"
-            ),
-            fields="files(id, name, mimeType)"
-        ).execute()
-
-        drive_files = results.get(
-            "files",
-            []
-        )
-
-        existing_drive_ids = set(
-            Photo.objects.filter(
-                wedding=wedding
-            ).exclude(
-                drive_file_id__isnull=True
-            ).exclude(
-                drive_file_id=""
-            ).values_list(
-                "drive_file_id",
-                flat=True
+            and wedding.drive_folder_id):
+            connection, created = (
+                WeddingDriveConnection.objects.get_or_create(
+                    wedding = wedding,
+                    drive_account= wedding.drive_account,
+                    folder_id = wedding.drive_folder_id
+                )
             )
-        )
+            connections =(
+                WeddingDriveConnection.objects.filter(
+                    wedding=wedding,
+                    drive_account__is_active = True
+                ).select_related("drive_account")
+            )
+        if not connections.exists():
+            return redirect(
+                "wedding_gallery",
+                wedding_id = wedding_id
+            )        
 
-        for drive_file in drive_files:
+        try:
+            for connection in connections:
+                drive_account=connection.drive_account
+                folder_id = connection.folder_id
 
-            drive_file_id = drive_file.get(
-                "id"
+            print("Syncing Drive",
+            drive_account.google_email,
+            "Folder:",
+            folder_id)
+
+            credentials = get_drive_credentials(
+                drive_account
             )
 
-            mime_type = drive_file.get(
-                "mimeType",
-                ""
+            drive_service = build(
+                "drive",
+                "v3",
+                credentials=credentials
             )
 
-            # Only sync image files.
-            if not mime_type.startswith(
-                "image/"
-            ):
-                continue
-
-            # Already synced.
-            if drive_file_id in existing_drive_ids:
-                continue
-
-            request_file = drive_service.files().get_media(
-                fileId=drive_file_id
-            )
-
-            file_buffer = BytesIO()
-
-            downloader = MediaIoBaseDownload(
-                file_buffer,
-                request_file
-            )
-
-            done = False
-
-            while not done:
-
-                _, done = downloader.next_chunk()
-
-            file_buffer.seek(0)
-
-            photo = Photo.objects.create(
-                wedding=wedding,
-
-                image=ContentFile(
-                    file_buffer.read(),
-                    name=drive_file.get(
-                        "name",
-                        "drive_photo.jpg"
-                    )
+            results = drive_service.files().list(
+                q=(
+                    f"'{folder_id}' in parents "
+                    "and trashed = false"
                 ),
+                fields="files(id, name, mimeType)"
+            ).execute()
 
-                face_descriptor="",
-
-                drive_file_id=drive_file_id
+            drive_files = results.get(
+                "files",
+                []
             )
 
-        return redirect(
-            "wedding_gallery",
-            wedding_id=wedding.id
-        )
+            existing_drive_ids = set(
+                Photo.objects.filter(
+                    wedding=wedding,
+                    drive_connection=connection
+                ).exclude(
+                    drive_file_id__isnull=True
+                ).exclude(
+                    drive_file_id=""
+                ).values_list(
+                    "drive_file_id",
+                    flat=True
+                )
+            )
 
-    except Exception as e:
+            for drive_file in drive_files:
 
-        print(
-            f"Google Drive sync failed: {e}"
-        )
+                drive_file_id = drive_file.get(
+                    "id"
+                )
 
-        return redirect(
-            "wedding_gallery",
-            wedding_id=wedding.id
-        )
+                mime_type = drive_file.get(
+                    "mimeType",
+                    ""
+                )
+
+                # Only sync image files.
+                if not mime_type.startswith(
+                    "image/"
+                ):
+                    continue
+
+                # Already synced.
+                if drive_file_id in existing_drive_ids:
+                    continue
+
+                request_file = drive_service.files().get_media(
+                    fileId=drive_file_id
+                )
+
+                file_buffer = BytesIO()
+
+                downloader = MediaIoBaseDownload(
+                    file_buffer,
+                    request_file
+                )
+
+                done = False
+
+                while not done:
+
+                    _, done = downloader.next_chunk()
+
+                file_buffer.seek(0)
+                #unique local filename
+                original_name = drive_file.get(
+                    "name",
+                    "drive_photo.jpg"
+                )
+                base_name, extension = os.path.splitext(
+                    original_name
+                )
+                unique_name = (
+                    f"wedding_{wedding_id}_"
+                    f"connection_{connection.id}_"
+                    f"{extension}"
+                )
+
+                photo = Photo.objects.create(
+                    wedding=wedding,
+
+                    image=ContentFile(
+                        file_buffer.read(),
+                        name=unique_name
+                    ),
+
+                    face_descriptor="",
+
+                    drive_file_id=drive_file_id,
+                    drive_connecition = connection
+                )
+                print(
+                    "Synced.", 
+                    original_name,
+                    "from",
+                    drive_account.google_email
+                )
+
+            return redirect(
+                "wedding_gallery",
+                wedding_id=wedding.id
+            )
+
+        except Exception as e:
+
+            print(
+                "Google Drive sync failed:",
+                e
+            )
+
+            return redirect(
+                "wedding_gallery",
+                wedding_id=wedding.id
+            )
 
 
 # =========================================================
@@ -1543,17 +1716,19 @@ def delete_photo(
     )
 
     if request.method == "POST":
+        drive_connection = (photo.drive_connection)
 
         # Delete photo from Google Drive first.
         if (
-            photo.drive_file_id
-            and photo.wedding.drive_account
+            photo.drive_file_id 
+            and drive_connection
+            and drive_connection.drive_account
         ):
 
             try:
 
                 credentials = get_drive_credentials(
-                    photo.wedding.drive_account
+                    drive_connection.drive_account
                 )
 
                 drive_service = build(
@@ -1567,15 +1742,13 @@ def delete_photo(
                 ).execute()
 
                 print(
-                    "Google Drive photo deleted: "
-                    f"{photo.drive_file_id}"
+                    "Google Drive photo deleted: ", photo.drive_file_id
                 )
 
             except Exception as e:
 
                 print(
-                    "Google Drive photo deletion failed: "
-                    f"{e}"
+                    "Google Drive photo deletion failed: ", e
                 )
 
                 # Do not delete database photo
@@ -1583,6 +1756,19 @@ def delete_photo(
                 return redirect(
                     "dashboard"
                 )
+        
+        #delete local photo
+
+        if photo.image:
+            try:
+                photo.image.delete(
+                    save = False
+                )
+            except Exception as e :
+                print(
+                    "Local photo deleteion failed:", e
+                )
+
 
         # Delete local/database photo.
         photo.delete()
@@ -1638,15 +1824,71 @@ def disconnect_google_drive(
 
     if request.method == "POST":
 
-        # Disconnect account from all weddings.
-        # Google Drive files/folders are NOT deleted.
-
-        Wedding.objects.filter(
-            drive_account=account
-        ).update(
-            drive_account=None,
-            drive_folder_id=None
+        #find all wedding connections, for this google drive account
+        connections = (
+            WeddingDriveConnection.objects.filter(
+                drive_account = account,
+                wedding_photographer = profile
+            ).select_related("wedding")
         )
+
+        affected_weddings = set(
+            connection.wedding_id for connection in connections
+        )
+        #removes only those photos belonging, to these drive connections
+
+        photos = Photo.objects.filter(
+            drive_connection__in= connections
+        )
+        for photo in photos:
+            if photo.image:
+                try:
+                    photo.image.delete(
+                        save=False
+                    )
+                except Exception as e:
+                    print(
+                        "Local photo deletion failed.", e
+                    )
+            photo.delete()
+
+
+        #delete connection records
+
+        connections.delete()
+
+        #fix old backward compatibility fields
+
+        for wedding_id in affected_weddings:
+            wedding = Wedding.objects.get(
+                id = wedding_id,
+                photographer = profile
+            )
+
+            #find another remaining connection.
+
+            remaining_connection = (
+                WeddingDriveConnection.objects.filter(
+                    wedding= wedding,
+                    drive_account__is_active=True
+                ).select_related("drive_account").order_by("id").first()
+            )
+            if remaining_connection:
+                wedding.drive_account: (
+                    remaining_connection.drive_account
+                )
+                wedding.drive_folder_id = (
+                    remaining_connection.folder_id
+                )
+            else:
+                wedding.drive_account:None
+                wedding.drive_folder_id = None
+            wedding.save(
+                update_fields=[
+                    "drive_account",
+                    "drive_folder_id"
+                ]
+            )
 
         # Remove account from this application.
         account.delete()
@@ -1794,23 +2036,41 @@ def connect_drive_folder(
                 "google_drive_folders",
                 account_id=account.id
             )
+        
+        connection, created = (
+            WeddingDriveConnection.objects.get_or_create(
+                wedding=wedding,
+                drive_account = account,
+                folder_id = folder_id
+            )
+        )
+        print(
+            "Wedding Drive connection:",
+            connection.id,
+            account.google_email,
+            folder_id,
+            "created =",
+            created
+        )
 
         # Connect selected Drive account + folder
         # to selected wedding.
-        wedding.drive_account = account
-        wedding.drive_folder_id = folder_id
+        if not wedding.drive_account :
 
-        wedding.save(
-            update_fields=[
-                "drive_account",
-                "drive_folder_id"
-            ]
-        )
+            wedding.drive_account = account
+            wedding.drive_folder_id = folder_id
 
-        return redirect(
-            "wedding_gallery",
-            wedding_id=wedding.id
-        )
+            wedding.save(
+                update_fields=[
+                    "drive_account",
+                    "drive_folder_id"
+                ]
+            )
+
+            return redirect(
+                "wedding_gallery",
+                wedding_id=wedding.id
+            )
 
     return redirect(
         "google_drive_folders",
