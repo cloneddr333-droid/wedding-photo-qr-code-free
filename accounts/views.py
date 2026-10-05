@@ -1874,14 +1874,14 @@ def disconnect_google_drive(
                 ).select_related("drive_account").order_by("id").first()
             )
             if remaining_connection:
-                wedding.drive_account: (
+                wedding.drive_account = (
                     remaining_connection.drive_account
                 )
                 wedding.drive_folder_id = (
                     remaining_connection.folder_id
                 )
             else:
-                wedding.drive_account:None
+                wedding.drive_account = None
                 wedding.drive_folder_id = None
             wedding.save(
                 update_fields=[
