@@ -62,6 +62,10 @@ class Wedding(models.Model):
         blank=True,
         null=True
     )
+    qr_code_url = models.URLField(
+        blank=True,
+        null=True
+    )
 
     # Google Drive integration
     drive_folder_id = models.CharField(

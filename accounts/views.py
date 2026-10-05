@@ -11,7 +11,7 @@ from .models import (
     Guest,
     Favorite,
 )
-import qrcode, math, os, mimetypes, json
+import qrcode, math, os, mimetypes, json, requests
 from io import BytesIO
 from django.core.files.base import ContentFile
 from django.urls import reverse
@@ -648,13 +648,55 @@ def create_wedding(request):
             format="PNG"
         )
 
-        wedding.qr_code.save(
-            f"wedding_{wedding.id}_qr.png",
-            ContentFile(
-                buffer.getvalue()
-            ),
-            save=True
+        qr_data = buffer.getvalue()
+
+        supabase_url = os.environ.get(
+            "SUPABASE_URL"
         )
+
+        supabase_key = os.environ.get(
+            "SUPABASE_KEY"
+        )
+
+        qr_filename = (
+            f"wedding_{wedding.id}_qr.png"
+        )
+
+        upload_url = (
+            f"{supabase_url}/storage/v1/object/"
+            f"qr-codes/{qr_filename}"
+        )
+
+        headers = {
+            "Authorization": f"Bearer {supabase_key}",
+            "apikey": supabase_key,
+            "Content-Type": "image/png",
+            "x-upsert": "true",
+        }
+
+        response = requests.post(
+            upload_url,
+            headers=headers,
+            data=qr_data
+        )
+
+        if response.status_code not in [200, 201]:
+            print(
+                "Supabase QR upload failed:",
+                response.status_code,
+                response.text
+            )
+        else:
+            qr_public_url = (
+                f"{supabase_url}/storage/v1/object/"
+                f"public/qr-codes/{qr_filename}"
+            )
+
+            wedding.qr_code_url = qr_public_url
+
+            wedding.save(
+                update_fields=["qr_code_url"]
+            )
 
         return redirect(
             "dashboard"
