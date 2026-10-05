@@ -582,7 +582,7 @@
 
 
                     <!-- QR CODE -->
-                    {% if wedding.qr_code %}
+                    {% if wedding.qr_code_url %}
 
                         <div class="qr-section">
 
@@ -591,14 +591,14 @@
                             </h4>
 
                             <img
-                                src="{{ wedding.qr_code.url }}"
+                                src="{{ wedding.qr_code_url }}"
                                 alt="Wedding QR Code"
                             >
 
                             <br><br>
 
                             <a
-                                href="{{ wedding.qr_code.url }}"
+                                href="{{ wedding.qr_code_url }}"
                                 download
                                 class="btn btn-download"
                             >
