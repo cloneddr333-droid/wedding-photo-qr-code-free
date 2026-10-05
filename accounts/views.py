@@ -2051,11 +2051,11 @@ def google_drive_folders(
 # =========================================================
 
 @login_required
+@login_required
 def connect_drive_folder(
     request,
     account_id
 ):
-
     profile = PhotographerProfile.objects.get(
         user=request.user
     )
@@ -2066,7 +2066,6 @@ def connect_drive_folder(
     )
 
     if request.method == "POST":
-
         folder_id = request.POST.get(
             "folder_id"
         )
@@ -2083,7 +2082,6 @@ def connect_drive_folder(
         # Make sure selected folder belongs
         # to the selected Google Drive account.
         try:
-
             credentials = get_drive_credentials(
                 account
             )
@@ -2102,14 +2100,12 @@ def connect_drive_folder(
             if folder.get("mimeType") != (
                 "application/vnd.google-apps.folder"
             ):
-
                 return redirect(
                     "google_drive_folders",
                     account_id=account.id
                 )
 
         except Exception as e:
-
             print(
                 "Google Drive folder verification failed: "
                 f"{e}"
@@ -2119,14 +2115,17 @@ def connect_drive_folder(
                 "google_drive_folders",
                 account_id=account.id
             )
-        
+
+        # Create connection between
+        # Wedding + Google Drive account + folder.
         connection, created = (
             WeddingDriveConnection.objects.get_or_create(
                 wedding=wedding,
-                drive_account = account,
-                folder_id = folder_id
+                drive_account=account,
+                folder_id=folder_id
             )
         )
+
         print(
             "Wedding Drive connection:",
             connection.id,
@@ -2136,10 +2135,8 @@ def connect_drive_folder(
             created
         )
 
-        # Connect selected Drive account + folder
-        # to selected wedding.
-        if not wedding.drive_account :
-
+        # Keep old fields only for backward compatibility.
+        if not wedding.drive_account:
             wedding.drive_account = account
             wedding.drive_folder_id = folder_id
 
@@ -2150,16 +2147,18 @@ def connect_drive_folder(
                 ]
             )
 
-            return redirect(
-                "wedding_gallery",
-                wedding_id=wedding.id
-            )
+        # IMPORTANT:
+        # Always go back to the wedding gallery,
+        # even when another Drive is already connected.
+        return redirect(
+            "wedding_gallery",
+            wedding_id=wedding.id
+        )
 
     return redirect(
         "google_drive_folders",
         account_id=account.id
     )
-
 
 # =========================================================
 # GOOGLE DRIVE CONNECT
