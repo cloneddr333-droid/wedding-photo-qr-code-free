@@ -749,7 +749,6 @@ def sync_drive_photos(
     request,
     wedding_id
 ):
-
     profile = PhotographerProfile.objects.get(
         user=request.user
     )
@@ -759,47 +758,60 @@ def sync_drive_photos(
         photographer=profile
     )
 
-    #get all the connected drive folders 
-
+    # Get all connected Drive folders
     connections = (
         WeddingDriveConnection.objects.filter(
-            wedding = wedding,
-            drive_account__is_active = True
-        ).select_related("drive_account").order_by("id"))
+            wedding=wedding,
+            drive_account__is_active=True
+        )
+        .select_related("drive_account")
+        .order_by("id")
+    )
 
-    #backward compatibility
+    # Backward compatibility
     if not connections.exists():
         if (
             wedding.drive_account
-            and wedding.drive_folder_id):
+            and wedding.drive_folder_id
+        ):
             connection, created = (
                 WeddingDriveConnection.objects.get_or_create(
-                    wedding = wedding,
-                    drive_account= wedding.drive_account,
-                    folder_id = wedding.drive_folder_id
+                    wedding=wedding,
+                    drive_account=wedding.drive_account,
+                    folder_id=wedding.drive_folder_id
                 )
             )
-            connections =(
+
+            connections = (
                 WeddingDriveConnection.objects.filter(
                     wedding=wedding,
-                    drive_account__is_active = True
-                ).select_related("drive_account")
+                    drive_account__is_active=True
+                )
+                .select_related("drive_account")
+                .order_by("id")
             )
-        if not connections.exists():
-            return redirect(
-                "wedding_gallery",
-                wedding_id = wedding_id
-            )        
 
-        try:
-            for connection in connections:
-                drive_account=connection.drive_account
-                folder_id = connection.folder_id
+    # No connected Drive
+    if not connections.exists():
+        return redirect(
+            "wedding_gallery",
+            wedding_id=wedding_id
+        )
 
-            print("Syncing Drive",
-            drive_account.google_email,
-            "Folder:",
-            folder_id)
+    try:
+
+        # Sync EVERY connected Drive
+        for connection in connections:
+
+            drive_account = connection.drive_account
+            folder_id = connection.folder_id
+
+            print(
+                "Syncing Drive:",
+                drive_account.google_email,
+                "Folder:",
+                folder_id
+            )
 
             credentials = get_drive_credentials(
                 drive_account
@@ -828,11 +840,14 @@ def sync_drive_photos(
                 Photo.objects.filter(
                     wedding=wedding,
                     drive_connection=connection
-                ).exclude(
+                )
+                .exclude(
                     drive_file_id__isnull=True
-                ).exclude(
+                )
+                .exclude(
                     drive_file_id=""
-                ).values_list(
+                )
+                .values_list(
                     "drive_file_id",
                     flat=True
                 )
@@ -849,18 +864,20 @@ def sync_drive_photos(
                     ""
                 )
 
-                # Only sync image files.
+                # Only image files
                 if not mime_type.startswith(
                     "image/"
                 ):
                     continue
 
-                # Already synced.
+                # Already synced
                 if drive_file_id in existing_drive_ids:
                     continue
 
-                request_file = drive_service.files().get_media(
-                    fileId=drive_file_id
+                request_file = (
+                    drive_service.files().get_media(
+                        fileId=drive_file_id
+                    )
                 )
 
                 file_buffer = BytesIO()
@@ -873,21 +890,24 @@ def sync_drive_photos(
                 done = False
 
                 while not done:
-
                     _, done = downloader.next_chunk()
 
                 file_buffer.seek(0)
-                #unique local filename
+
+                # Unique local filename
                 original_name = drive_file.get(
                     "name",
                     "drive_photo.jpg"
                 )
+
                 base_name, extension = os.path.splitext(
                     original_name
                 )
+
                 unique_name = (
                     f"wedding_{wedding_id}_"
                     f"connection_{connection.id}_"
+                    f"{drive_file_id}"
                     f"{extension}"
                 )
 
@@ -902,31 +922,33 @@ def sync_drive_photos(
                     face_descriptor="",
 
                     drive_file_id=drive_file_id,
-                    drive_connecition = connection
+
+                    drive_connection=connection
                 )
+
                 print(
-                    "Synced.", 
+                    "Synced:",
                     original_name,
                     "from",
                     drive_account.google_email
                 )
 
-            return redirect(
-                "wedding_gallery",
-                wedding_id=wedding.id
-            )
+        return redirect(
+            "wedding_gallery",
+            wedding_id=wedding.id
+        )
 
-        except Exception as e:
+    except Exception as e:
 
-            print(
-                "Google Drive sync failed:",
-                e
-            )
+        print(
+            "Google Drive sync failed:",
+            e
+        )
 
-            return redirect(
-                "wedding_gallery",
-                wedding_id=wedding.id
-            )
+        return redirect(
+            "wedding_gallery",
+            wedding_id=wedding.id
+        )
 
 
 # =========================================================
