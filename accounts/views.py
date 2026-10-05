@@ -1632,6 +1632,7 @@ def photographer_branding(request):
 # =========================================================
 
 @login_required
+@login_required
 def delete_wedding(
     request,
     wedding_id
@@ -1648,16 +1649,25 @@ def delete_wedding(
 
     if request.method == "POST":
 
-        # Delete Google Drive wedding folder first.
-        if (
-            wedding.drive_account
-            and wedding.drive_folder_id
-        ):
+        # -------------------------------------------------
+        # DELETE ALL CONNECTED GOOGLE DRIVE FOLDERS
+        # -------------------------------------------------
+
+        connections = WeddingDriveConnection.objects.filter(
+            wedding=wedding
+        ).select_related(
+            "drive_account"
+        )
+
+        for connection in connections:
+
+            if not connection.folder_id:
+                continue
 
             try:
 
                 credentials = get_drive_credentials(
-                    wedding.drive_account
+                    connection.drive_account
                 )
 
                 drive_service = build(
@@ -1667,34 +1677,33 @@ def delete_wedding(
                 )
 
                 drive_service.files().delete(
-                    fileId=wedding.drive_folder_id
+                    fileId=connection.folder_id
                 ).execute()
 
                 print(
-                    "Google Drive folder deleted: "
-                    f"{wedding.drive_folder_id}"
+                    "Google Drive wedding folder deleted:",
+                    connection.folder_id
                 )
 
             except Exception as e:
 
                 print(
-                    "Google Drive folder deletion failed: "
-                    f"{e}"
+                    "Google Drive folder deletion failed:",
+                    e
                 )
 
-                # Stop here so database wedding is
-                # not deleted if Drive deletion failed.
-                return redirect(
-                    "dashboard"
-                )
+                # Continue deleting other folders.
+                continue
 
-        # Delete wedding from database.
+        # -------------------------------------------------
+        # DELETE WEDDING FROM DATABASE
+        # -------------------------------------------------
+
         wedding.delete()
 
     return redirect(
         "dashboard"
     )
-
 
 # =========================================================
 # DELETE PHOTO
@@ -1776,7 +1785,81 @@ def delete_photo(
     return redirect(
         "dashboard"
     )
+@login_required
+def delete_selected_photos(request, wedding_id):
 
+    profile = PhotographerProfile.objects.get(
+        user=request.user
+    )
+
+    wedding = Wedding.objects.get(
+        id=wedding_id,
+        photographer=profile
+    )
+
+    if request.method == "POST":
+
+        photo_ids = request.POST.getlist(
+            "selected_photos"
+        )
+
+        photos = Photo.objects.filter(
+            id__in=photo_ids,
+            wedding=wedding
+        ).select_related(
+            "drive_connection__drive_account"
+        )
+
+        for photo in photos:
+
+            # Delete the actual file from Google Drive
+            if (
+                photo.drive_file_id
+                and photo.drive_connection
+                and photo.drive_connection.drive_account
+            ):
+
+                try:
+
+                    credentials = get_drive_credentials(
+                        photo.drive_connection.drive_account
+                    )
+
+                    drive_service = build(
+                        "drive",
+                        "v3",
+                        credentials=credentials
+                    )
+
+                    drive_service.files().delete(
+                        fileId=photo.drive_file_id
+                    ).execute()
+
+                except Exception as e:
+
+                    print(
+                        "Google Drive photo deletion failed:",
+                        e
+                    )
+
+            # Delete local image
+            try:
+                photo.image.delete(
+                    save=False
+                )
+            except Exception as e:
+                print(
+                    "Local photo deletion failed:",
+                    e
+                )
+
+            # Delete database record
+            photo.delete()
+
+    return redirect(
+        "wedding_gallery",
+        wedding_id=wedding.id
+    )
 
 # =========================================================
 # GOOGLE DRIVE ACCOUNTS

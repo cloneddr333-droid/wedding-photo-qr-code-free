@@ -7,6 +7,7 @@
     <title>{{ wedding.event_name }} - Gallery</title>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -20,6 +21,7 @@
         }
 
         /* TOP BAR */
+
         .topbar {
             background: #111;
             color: white;
@@ -46,6 +48,7 @@
         }
 
         /* HEADER */
+
         .header {
             max-width: 1200px;
             margin: 35px auto 25px;
@@ -69,6 +72,7 @@
         }
 
         /* ACTIONS */
+
         .actions {
             max-width: 1200px;
             margin: 0 auto 25px;
@@ -77,6 +81,7 @@
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .sync-btn {
@@ -94,7 +99,47 @@
             background: #333;
         }
 
+        /* BULK ACTIONS */
+
+        .bulk-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .select-all-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .select-all-label input {
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+        }
+
+        .delete-selected-btn {
+            border: none;
+            background: #b00020;
+            color: white;
+            padding: 11px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .delete-selected-btn:hover {
+            background: #8b0019;
+        }
+
         /* GALLERY */
+
         .gallery {
             max-width: 1200px;
             margin: 0 auto;
@@ -112,6 +157,23 @@
             box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
         }
 
+        .photo-select {
+            padding: 10px 12px;
+
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .photo-select input {
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+        }
+
         .photo-card img {
             width: 100%;
             height: 230px;
@@ -127,6 +189,7 @@
         }
 
         /* EMPTY */
+
         .empty {
             max-width: 600px;
             margin: 60px auto;
@@ -150,11 +213,32 @@
             color: #777;
         }
 
+        /* ACTION BUTTON */
+
+        .action-btn {
+            display: inline-block;
+            padding: 9px 15px;
+            background: #222;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            border: 1px solid #333;
+        }
+
+        .action-btn:hover {
+            background: #444;
+            color: white;
+        }
+
         /* MOBILE */
+
         @media (max-width: 900px) {
+
             .gallery {
                 grid-template-columns: repeat(3, 1fr);
             }
+
         }
 
         @media (max-width: 650px) {
@@ -189,6 +273,7 @@
             .actions {
                 padding: 0 12px;
             }
+
         }
 
         @media (max-width: 400px) {
@@ -200,28 +285,16 @@
             .photo-card img {
                 height: 240px;
             }
-        }
-        .action-btn {
-            display: inline-block;
-            padding: 9px 15px;
-            background: #222;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 14px;
-            border: 1px solid #333;
+
         }
 
-        .action-btn:hover {
-            background: #444;
-            color: white;
-        }
     </style>
 </head>
 
 <body>
 
     <!-- TOP BAR -->
+
     <div class="topbar">
 
         <div class="brand">
@@ -234,15 +307,19 @@
         >
             ❤️ Guest Favorites
         </a>
-        <a href="{% url 'dashboard' %}" class="back-btn">
+
+        <a
+            href="{% url 'dashboard' %}"
+            class="back-btn"
+        >
             ← Dashboard
         </a>
-        
 
     </div>
 
 
     <!-- WEDDING HEADER -->
+
     <div class="header">
 
         <h1>
@@ -260,7 +337,8 @@
     </div>
 
 
-    <!-- ACTIONS -->
+    <!-- SYNC ACTION -->
+
     <div class="actions">
 
         <form
@@ -270,7 +348,10 @@
 
             {% csrf_token %}
 
-            <button type="submit" class="sync-btn">
+            <button
+                type="submit"
+                class="sync-btn"
+            >
                 🔄 Sync Photos from Google Drive
             </button>
 
@@ -283,27 +364,86 @@
 
     {% if photos %}
 
-        <div class="gallery">
+        <form
+            method="POST"
+            action="{% url 'delete_selected_photos' wedding.id %}"
+            id="bulk-delete-form"
+        >
 
-            {% for photo in photos %}
+            {% csrf_token %}
 
-                <div class="photo-card">
 
-                    <img
-                        src="{{ photo.image.url }}"
-                        alt="Wedding Photo"
-                        loading="lazy"
+            <!-- BULK ACTIONS -->
+
+            <div class="actions">
+
+                <div class="bulk-actions">
+
+                    <label class="select-all-label">
+
+                        <input
+                            type="checkbox"
+                            id="select-all"
+                        >
+
+                        Select All
+
+                    </label>
+
+
+                    <button
+                        type="submit"
+                        class="delete-selected-btn"
                     >
-
-                    <div class="photo-info">
-                        📷 Wedding Photo
-                    </div>
+                        🗑️ Delete Selected
+                    </button>
 
                 </div>
 
-            {% endfor %}
+            </div>
 
-        </div>
+
+            <!-- GALLERY -->
+
+            <div class="gallery">
+
+                {% for photo in photos %}
+
+                    <div class="photo-card">
+
+                        <div class="photo-select">
+
+                            <input
+                                type="checkbox"
+                                name="selected_photos"
+                                value="{{ photo.id }}"
+                                class="photo-checkbox"
+                            >
+
+                            Select
+
+                        </div>
+
+
+                        <img
+                            src="{{ photo.image.url }}"
+                            alt="Wedding Photo"
+                            loading="lazy"
+                        >
+
+
+                        <div class="photo-info">
+                            📷 Wedding Photo
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </form>
+
 
     {% else %}
 
@@ -324,6 +464,125 @@
         </div>
 
     {% endif %}
+
+
+    <!-- BULK DELETE JAVASCRIPT -->
+
+    <script>
+
+        const selectAll = document.getElementById("select-all");
+
+        const checkboxes = document.querySelectorAll(
+            ".photo-checkbox"
+        );
+
+
+        if (selectAll) {
+
+            selectAll.addEventListener(
+                "change",
+                function () {
+
+                    checkboxes.forEach(
+                        function (checkbox) {
+
+                            checkbox.checked =
+                                selectAll.checked;
+
+                        }
+                    );
+
+                }
+            );
+
+        }
+
+
+        checkboxes.forEach(
+            function (checkbox) {
+
+                checkbox.addEventListener(
+                    "change",
+                    function () {
+
+                        const total =
+                            document.querySelectorAll(
+                                ".photo-checkbox"
+                            ).length;
+
+                        const selected =
+                            document.querySelectorAll(
+                                ".photo-checkbox:checked"
+                            ).length;
+
+                        if (selectAll) {
+
+                            selectAll.checked =
+                                total > 0 &&
+                                selected === total;
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+        const bulkDeleteForm =
+            document.getElementById(
+                "bulk-delete-form"
+            );
+
+
+        if (bulkDeleteForm) {
+
+            bulkDeleteForm.addEventListener(
+                "submit",
+                function (event) {
+
+                    const selected =
+                        document.querySelectorAll(
+                            ".photo-checkbox:checked"
+                        );
+
+
+                    if (selected.length === 0) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "Please select at least one photo."
+                        );
+
+                        return;
+
+                    }
+
+
+                    const confirmed =
+                        confirm(
+                            "⚠️ Delete selected photos?\n\n" +
+                            "This will permanently delete " +
+                            "the selected photos from the website " +
+                            "and Google Drive.\n\n" +
+                            "This action cannot be undone."
+                        );
+
+
+                    if (!confirmed) {
+
+                        event.preventDefault();
+
+                    }
+
+                }
+            );
+
+        }
+
+    </script>
 
 </body>
 </html>

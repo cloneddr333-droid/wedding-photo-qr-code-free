@@ -25,6 +25,8 @@ urlpatterns = [
     path("branding/",views.photographer_branding,name="photographer_branding"),
     path("wedding/<int:wedding_id>/delete/",views.delete_wedding,name="delete_wedding"),
     path("photo/<int:photo_id>/delete/",views.delete_photo,name="delete_photo"),
+    path("wedding/<int:wedding_id>/delete-selected/", views.delete_selected_photos,
+    name="delete_selected_photos"),
     path("logout/",LogoutView.as_view(next_page="photographer_login"),name="logout"),
     path("drive/", views.google_drive, name="google_drive"),
     path("drive/<int:account_id>/folders/", views.google_drive_folders,   name="google_drive_folders"),
