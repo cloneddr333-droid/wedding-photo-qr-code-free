@@ -1714,7 +1714,7 @@ def guest_wedding_photos(request, wedding_id):
             matches.append(
                 {
                     "id": photo.id,
-                    "image": photo.image.url,
+                    "image": reverse("serve_drive_photo", args=[photo.id]),
                     "distance": math.sqrt(
                         best_distance_squared
                     )
