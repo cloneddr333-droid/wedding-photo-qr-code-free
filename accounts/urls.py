@@ -11,11 +11,9 @@ urlpatterns = [
     path("wedding/<int:wedding_id>/sync-drive/",views.sync_drive_photos, name = "sync_drive_photos"),
 
     path("wedding/<int:wedding_id>/",views.wedding_gallery,name="wedding_gallery"),
-    path(
-    "wedding/<int:wedding_id>/guest-favorites/",
-    views.guest_favorites,
-    name="guest_favorites"
-),
+    path("photo/<int:photo_id>/drive/", views.serve_drive_photo, name="serve_drive_photo"),
+    path("wedding/<int:wedding_id>/guest-favorites/", views.guest_favorites,
+    name="guest_favorites"),
     path("face-test/",views.face_test,name="face_test"),
     path("face-match-test/<int:wedding_id>/",views.face_match_test,name="face_match_test"),
     path("guest-match/<int:wedding_id>/",views.guest_match,name="guest_match"),
@@ -34,5 +32,5 @@ urlpatterns = [
     path("drive/connect/", views.google_drive_connect, name="google_drive_connect"),
     path("drive/callback/", views.google_drive_callback, name="google_drive_callback"),
     path("drive/<int:account_id>/connect-folder/",views.connect_drive_folder,
-    name="connect_drive_folder"
-),]
+    name="connect_drive_folder"),
+    ]

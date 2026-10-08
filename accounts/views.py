@@ -15,7 +15,7 @@ import qrcode, math, os, mimetypes, json, requests
 from io import BytesIO
 from django.core.files.base import ContentFile
 from django.urls import reverse
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 
 from google_auth_oauthlib.flow import Flow
@@ -1023,7 +1023,98 @@ def wedding_gallery(
             "photos": photos,
         }
     )
+# =========================================================
+# SERVE PHOTO FROM GOOGLE DRIVE
+# =========================================================
 
+def serve_drive_photo(request, photo_id):
+
+    try:
+        photo = Photo.objects.select_related(
+            "drive_connection__drive_account"
+        ).get(
+            id=photo_id
+        )
+
+    except Photo.DoesNotExist:
+        return HttpResponse(
+            "Photo not found.",
+            status=404
+        )
+
+    if (
+        not photo.drive_file_id
+        or not photo.drive_connection
+        or not photo.drive_connection.drive_account
+    ):
+        return HttpResponse(
+            "Drive photo not available.",
+            status=404
+        )
+
+    try:
+        credentials = get_drive_credentials(
+            photo.drive_connection.drive_account
+        )
+
+        drive_service = build(
+            "drive",
+            "v3",
+            credentials=credentials
+        )
+
+        drive_file = drive_service.files().get(
+            fileId=photo.drive_file_id,
+            fields="mimeType"
+        ).execute()
+
+        mime_type = drive_file.get(
+            "mimeType",
+            "image/jpeg"
+        )
+
+        request_file = (
+            drive_service.files().get_media(
+                fileId=photo.drive_file_id
+            )
+        )
+
+        file_buffer = BytesIO()
+
+        downloader = MediaIoBaseDownload(
+            file_buffer,
+            request_file
+        )
+
+        done = False
+
+        while not done:
+            _, done = downloader.next_chunk()
+
+        file_buffer.seek(0)
+
+        response = HttpResponse(
+            file_buffer.read(),
+            content_type=mime_type
+        )
+
+        response["Cache-Control"] = (
+            "public, max-age=3600"
+        )
+
+        return response
+
+    except Exception as e:
+
+        print(
+            "Google Drive photo serving failed:",
+            e
+        )
+
+        return HttpResponse(
+            "Unable to load photo.",
+            status=404
+        )
 
 # =========================================================
 # OLD FACE TEST
