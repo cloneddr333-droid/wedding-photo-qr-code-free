@@ -2114,7 +2114,7 @@ def google_drive_folders(
 # CONNECT EXISTING DRIVE FOLDER
 # =========================================================
 
-@login_required
+
 @login_required
 def connect_drive_folder(
     request,
