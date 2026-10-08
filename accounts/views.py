@@ -1694,7 +1694,7 @@ def photographer_branding(request):
 # DELETE WEDDING
 # =========================================================
 
-@login_required
+
 @login_required
 def delete_wedding(
     request,
@@ -1713,53 +1713,11 @@ def delete_wedding(
     if request.method == "POST":
 
         # -------------------------------------------------
-        # DELETE ALL CONNECTED GOOGLE DRIVE FOLDERS
-        # -------------------------------------------------
-
-        connections = WeddingDriveConnection.objects.filter(
-            wedding=wedding
-        ).select_related(
-            "drive_account"
-        )
-
-        for connection in connections:
-
-            if not connection.folder_id:
-                continue
-
-            try:
-
-                credentials = get_drive_credentials(
-                    connection.drive_account
-                )
-
-                drive_service = build(
-                    "drive",
-                    "v3",
-                    credentials=credentials
-                )
-
-                drive_service.files().delete(
-                    fileId=connection.folder_id
-                ).execute()
-
-                print(
-                    "Google Drive wedding folder deleted:",
-                    connection.folder_id
-                )
-
-            except Exception as e:
-
-                print(
-                    "Google Drive folder deletion failed:",
-                    e
-                )
-
-                # Continue deleting other folders.
-                continue
-
-        # -------------------------------------------------
-        # DELETE WEDDING FROM DATABASE
+        # IMPORTANT:
+        # DO NOT DELETE ANY GOOGLE DRIVE FOLDER OR FILE.
+        #
+        # Only delete the Wedding from the website/database.
+        # Google Drive folders and original files must remain.
         # -------------------------------------------------
 
         wedding.delete()
