@@ -671,7 +671,6 @@ def create_wedding(request):
             "Authorization": f"Bearer {supabase_key}",
             "apikey": supabase_key,
             "Content-Type": "image/png",
-            "x-upsert": "true",
         }
 
         response = requests.post(
