@@ -623,7 +623,7 @@
                             <div class="photo-item">
 
                                 <img
-                                    src="{{ photo.image.url }}"
+                                    src="{% url 'serve_drive_photo' photo.id %}"
                                     alt="Wedding Photo"
                                 >
 
