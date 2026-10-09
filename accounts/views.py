@@ -160,58 +160,75 @@ def activate_license(request):
 # GOOGLE DRIVE HELPERS
 # =========================================================
 
+
 def get_drive_credentials(drive_account):
     """
-    Rebuild Google OAuth credentials from the saved Drive account.
-    Refresh the access token automatically when it has expired.
+    Rebuild Google OAuth credentials using the same OAuth
+    client that was used when the Drive account was connected.
+    Refresh the access token because its expiry is not stored
+    in the current database model.
     """
 
-    client_secret_file = os.environ.get(
-        "GOOGLE_CLIENT_SECRET_FILE"
-    )
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
 
-    if not client_secret_file:
-        client_secret_file = os.path.join(
-            settings.BASE_DIR,
-            "credentials",
-            "client_secret.json"
+    # Fallback to the configured client-secret file only
+    # when the environment variables are not available.
+    if not client_id or not client_secret:
+        client_secret_file = os.environ.get(
+            "GOOGLE_CLIENT_SECRET_FILE"
         )
 
-    with open(
-        client_secret_file,
-        "r",
-        encoding="utf-8"
-    ) as file:
+        if not client_secret_file:
+            client_secret_file = os.path.join(
+                settings.BASE_DIR,
+                "credentials",
+                "client_secret.json"
+            )
 
-        client_config = json.load(file)
+        with open(
+            client_secret_file,
+            "r",
+            encoding="utf-8"
+        ) as file:
+            client_config = json.load(file)
 
-    web_config = client_config.get(
-        "web",
-        client_config.get("installed", {})
-    )
+        web_config = client_config.get(
+            "web",
+            client_config.get("installed", {})
+        )
+
+        client_id = client_id or web_config.get("client_id")
+        client_secret = (
+            client_secret or web_config.get("client_secret")
+        )
+
+    if not drive_account.refresh_token:
+        raise ValueError(
+            "Google Drive refresh token is missing. "
+            "The saved account needs valid OAuth authorization."
+        )
 
     credentials = Credentials(
-        token=drive_account.access_token,
+        token=drive_account.access_token or None,
         refresh_token=drive_account.refresh_token,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=web_config.get("client_id"),
-        client_secret=web_config.get("client_secret"),
+        client_id=client_id,
+        client_secret=client_secret,
         scopes=[
             "https://www.googleapis.com/auth/drive"
         ],
     )
 
-    if credentials.expired and credentials.refresh_token:
+    # The current model does not persist token expiry,
+    # so refresh before using the token.
+    credentials.refresh(Request())
 
-        credentials.refresh(Request())
-
-        drive_account.access_token = credentials.token
-
-        drive_account.save(
-            update_fields=["access_token"]
-        )
+    drive_account.access_token = credentials.token
+    drive_account.save(update_fields=["access_token"])
 
     return credentials
+
 
 
 def create_drive_folder_for_wedding(
@@ -1027,94 +1044,118 @@ def wedding_gallery(
 # SERVE PHOTO FROM GOOGLE DRIVE
 # =========================================================
 
-def serve_drive_photo(request, photo_id):
 
+def serve_drive_photo(request, photo_id):
     try:
         photo = Photo.objects.select_related(
-            "drive_connection__drive_account"
-        ).get(
-            id=photo_id
-        )
+            "wedding",
+            "drive_connection__drive_account",
+        ).get(id=photo_id)
 
     except Photo.DoesNotExist:
-        return HttpResponse(
-            "Photo not found.",
-            status=404
+        return HttpResponse("Photo not found.", status=404)
+
+    # Resolve the Drive account without changing connections.
+    drive_account = None
+
+    if photo.drive_connection_id:
+        drive_account = photo.drive_connection.drive_account
+
+    if not drive_account:
+        drive_account = photo.wedding.drive_account
+
+    if not drive_account:
+        connection = (
+            WeddingDriveConnection.objects
+            .filter(
+                wedding=photo.wedding,
+                drive_account__is_active=True,
+            )
+            .select_related("drive_account")
+            .order_by("id")
+            .first()
         )
 
-    if (
-        not photo.drive_file_id
-        or not photo.drive_connection
-        or not photo.drive_connection.drive_account
-    ):
-        return HttpResponse(
-            "Drive photo not available.",
-            status=404
-        )
+        if connection:
+            drive_account = connection.drive_account
 
-    try:
-        credentials = get_drive_credentials(
-            photo.drive_connection.drive_account
-        )
+    # Preferred source: Google Drive.
+    if photo.drive_file_id and drive_account:
+        try:
+            credentials = get_drive_credentials(drive_account)
 
-        drive_service = build(
-            "drive",
-            "v3",
-            credentials=credentials
-        )
+            drive_service = build(
+                "drive",
+                "v3",
+                credentials=credentials,
+                cache_discovery=False,
+            )
 
-        drive_file = drive_service.files().get(
-            fileId=photo.drive_file_id,
-            fields="mimeType"
-        ).execute()
+            metadata = drive_service.files().get(
+                fileId=photo.drive_file_id,
+                fields="mimeType",
+            ).execute()
 
-        mime_type = drive_file.get(
-            "mimeType",
-            "image/jpeg"
-        )
+            mime_type = metadata.get(
+                "mimeType",
+                "image/jpeg",
+            )
 
-        request_file = (
-            drive_service.files().get_media(
+            request_file = drive_service.files().get_media(
                 fileId=photo.drive_file_id
             )
-        )
 
-        file_buffer = BytesIO()
+            file_buffer = BytesIO()
+            downloader = MediaIoBaseDownload(
+                file_buffer,
+                request_file,
+            )
 
-        downloader = MediaIoBaseDownload(
-            file_buffer,
-            request_file
-        )
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
 
-        done = False
+            response = HttpResponse(
+                file_buffer.getvalue(),
+                content_type=mime_type,
+            )
+            response["Cache-Control"] = "private, max-age=300"
+            return response
 
-        while not done:
-            _, done = downloader.next_chunk()
+        except Exception as e:
+            print(
+                "Google Drive photo serving failed:",
+                photo.id,
+                repr(e),
+            )
 
-        file_buffer.seek(0)
+    # Fallback for photos whose local file still exists.
+    try:
+        if photo.image and photo.image.storage.exists(
+            photo.image.name
+        ):
+            with photo.image.open("rb") as image_file:
+                content = image_file.read()
 
-        response = HttpResponse(
-            file_buffer.read(),
-            content_type=mime_type
-        )
-
-        response["Cache-Control"] = (
-            "public, max-age=3600"
-        )
-
-        return response
+            response = HttpResponse(
+                content,
+                content_type="image/jpeg",
+            )
+            response["Cache-Control"] = "private, max-age=300"
+            return response
 
     except Exception as e:
-
         print(
-            "Google Drive photo serving failed:",
-            e
+            "Local photo fallback failed:",
+            photo.id,
+            repr(e),
         )
 
-        return HttpResponse(
-            "Unable to load photo.",
-            status=404
-        )
+    return HttpResponse(
+        "Photo could not be loaded. Check the Drive authorization and file access.",
+        status=404,
+    )
+
 
 # =========================================================
 # OLD FACE TEST
