@@ -417,10 +417,10 @@
         <!-- PHOTOGRAPHER PROFILE -->
         <div class="photographer-profile">
 
-            {% if profile.logo %}
+            {% if profile_logo_url %}
 
                 <img
-                    src="{{ profile.logo.url }}"
+                    src="{{ profile_logo_url }}"
                     alt="{{ profile.business_name }}"
                     class="dashboard-logo"
                 >
@@ -557,6 +557,13 @@
                             class="btn btn-gallery"
                         >
                               Open Gallery
+                        </a>
+
+                        <a
+                            href="{% url 'rebuild_face_descriptors' wedding.id %}"
+                            class="btn btn-upload"
+                        >
+                            🧠 Prepare Face Data
                         </a>
 
 

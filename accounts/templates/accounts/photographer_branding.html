@@ -284,6 +284,11 @@
 
     <div class="branding-card">
 
+        {% if error %}
+            <div style="background:#fff0f0;color:#b00020;padding:12px;border-radius:8px;margin-bottom:16px;">{{ error }}</div>
+        {% endif %}
+
+
         <form
             method="POST"
             enctype="multipart/form-data"
@@ -330,10 +335,10 @@
 
                 <div class="logo-preview-box">
 
-                    {% if profile.logo %}
+                    {% if profile_logo_url %}
 
                         <img
-                            src="{{ profile.logo.url }}"
+                            src="{{ profile_logo_url }}"
                             alt="Photographer Logo"
                             class="logo-preview"
                         >

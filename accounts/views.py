@@ -30,6 +30,22 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
 
+def photographer_logo_url(profile):
+    """Return either a durable Supabase URL or a legacy local logo URL."""
+    try:
+        stored_value = str(profile.logo or "")
+    except Exception:
+        stored_value = ""
+    if stored_value.startswith(("https://", "http://")):
+        return stored_value
+    if profile.logo:
+        try:
+            return profile.logo.url
+        except Exception:
+            return ""
+    return ""
+
+
 # =========================================================
 # LOGIN
 # =========================================================
@@ -96,6 +112,7 @@ def dashboard(request):
         "accounts/dashboard.html",
         {
             "profile": profile,
+            "profile_logo_url": photographer_logo_url(profile),
             "license": license,
             "weddings": weddings,
         }
@@ -1193,7 +1210,88 @@ def face_match_test(
         }
     )
 
+@login_required
+def rebuild_face_descriptors(request, wedding_id):
+    profile = PhotographerProfile.objects.get(user=request.user)
 
+    wedding = Wedding.objects.get(
+        id=wedding_id,
+        photographer=profile
+    )
+
+    photos = wedding.photos.filter(
+        face_descriptor=""
+    ) | wedding.photos.filter(
+        face_descriptor__isnull=True
+    )
+
+    photos = photos.order_by("id")
+
+    return render(
+        request,
+        "accounts/rebuild_face_descriptors.html",
+        {
+            "wedding": wedding,
+            "photos": photos,
+        }
+    )
+
+
+@login_required
+def save_face_descriptor(request, photo_id):
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "error": "POST required"},
+            status=405
+        )
+
+    profile = PhotographerProfile.objects.get(user=request.user)
+
+    try:
+        photo = Photo.objects.get(
+            id=photo_id,
+            wedding__photographer=profile
+        )
+    except Photo.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "error": "Photo not found"},
+            status=404
+        )
+
+    try:
+        data = json.loads(request.body)
+        descriptors = data.get("descriptors")
+
+        if not isinstance(descriptors, list):
+            raise ValueError("Invalid descriptors")
+
+        # Save [] too, so photos without a face are marked as processed.
+        # The matching endpoint safely skips empty descriptor lists.
+        if not descriptors:
+            photo.face_descriptor = "[]"
+            photo.save(update_fields=["face_descriptor"])
+            return JsonResponse({"success": True, "face_count": 0})
+
+        for descriptor in descriptors:
+            if (
+                not isinstance(descriptor, list)
+                or len(descriptor) != 128
+            ):
+                raise ValueError("Invalid face descriptor")
+
+            for value in descriptor:
+                float(value)
+
+        photo.face_descriptor = json.dumps(descriptors)
+        photo.save(update_fields=["face_descriptor"])
+
+        return JsonResponse({"success": True, "face_count": len(descriptors)})
+
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return JsonResponse(
+            {"success": False, "error": "Invalid descriptor data"},
+            status=400
+        )
 # =========================================================
 # GUEST MATCH PAGE
 # =========================================================
@@ -1233,6 +1331,7 @@ def guest_match(
                 "accounts/guest_match.html",
                 {
                     "wedding": wedding,
+                    "photographer_logo_url": photographer_logo_url(wedding.photographer),
                     "error": "Please enter your name."
                 }
             )
@@ -1247,6 +1346,7 @@ def guest_match(
             "accounts/guest_match.html",
             {
                 "wedding": wedding,
+                "photographer_logo_url": photographer_logo_url(wedding.photographer),
                 "guest": guest
             }
         )
@@ -1255,7 +1355,8 @@ def guest_match(
         request,
         "accounts/guest_match.html",
         {
-            "wedding": wedding
+            "wedding": wedding,
+            "photographer_logo_url": photographer_logo_url(wedding.photographer),
         }
     )
 
@@ -1790,34 +1891,66 @@ def guest_wedding_photos(request, wedding_id):
 
 @login_required
 def photographer_branding(request):
-
-    profile = PhotographerProfile.objects.get(
-        user=request.user
-    )
+    profile = PhotographerProfile.objects.get(user=request.user)
+    error = None
 
     if request.method == "POST":
+        profile.business_name = request.POST.get("business_name", "").strip()
+        uploaded_logo = request.FILES.get("logo")
 
-        profile.business_name = request.POST.get(
-            "business_name"
-        )
-
-        if request.FILES.get("logo"):
-
-            profile.logo = request.FILES.get(
-                "logo"
-            )
+        if uploaded_logo:
+            # Keep logos durable on Supabase Storage, not Render's temporary disk.
+            # Reuse the already-configured public qr-codes bucket to avoid requiring
+            # a new bucket. Original wedding photos remain in Google Drive.
+            if uploaded_logo.size > 5 * 1024 * 1024:
+                error = "Logo must be 5 MB or smaller."
+            elif not (uploaded_logo.content_type or "").startswith("image/"):
+                error = "Please upload an image file for the logo."
+            else:
+                supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+                supabase_key = os.environ.get("SUPABASE_KEY", "")
+                extension = os.path.splitext(uploaded_logo.name)[1].lower()
+                if extension not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+                    extension = ".png" if uploaded_logo.content_type == "image/png" else ".jpg"
+                object_name = "photographer_logos/profile_{}{}".format(profile.id, extension)
+                if not supabase_url or not supabase_key:
+                    error = "Supabase storage is not configured. Existing branding was kept."
+                else:
+                    upload_url = "{}/storage/v1/object/qr-codes/{}".format(
+                        supabase_url, object_name
+                    )
+                    headers = {
+                        "Authorization": "Bearer " + supabase_key,
+                        "apikey": supabase_key,
+                        "Content-Type": uploaded_logo.content_type or "image/jpeg",
+                        "x-upsert": "true",
+                    }
+                    try:
+                        response = requests.post(
+                            upload_url, headers=headers, data=uploaded_logo.read(), timeout=30
+                        )
+                        if response.status_code in (200, 201):
+                            profile.logo = "{}/storage/v1/object/public/qr-codes/{}".format(
+                                supabase_url, object_name
+                            )
+                        else:
+                            error = "Logo upload failed ({}). Existing branding was kept.".format(
+                                response.status_code
+                            )
+                    except requests.RequestException:
+                        error = "Could not connect to storage. Existing branding was kept."
 
         profile.save()
-
-        return redirect(
-            "dashboard"
-        )
+        if not error:
+            return redirect("dashboard")
 
     return render(
         request,
         "accounts/photographer_branding.html",
         {
-            "profile": profile
+            "profile": profile,
+            "profile_logo_url": photographer_logo_url(profile),
+            "error": error,
         }
     )
 

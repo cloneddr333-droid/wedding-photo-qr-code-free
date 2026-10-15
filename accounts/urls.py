@@ -33,4 +33,8 @@ urlpatterns = [
     path("drive/callback/", views.google_drive_callback, name="google_drive_callback"),
     path("drive/<int:account_id>/connect-folder/",views.connect_drive_folder,
     name="connect_drive_folder"),
+    path("wedding/<int:wedding_id>/rebuild-face-descriptors/",views.rebuild_face_descriptors,
+    name="rebuild_face_descriptors",),
+    path("photo/<int:photo_id>/save-face-descriptor/", views.save_face_descriptor,
+    name="save_face_descriptor",),
     ]
